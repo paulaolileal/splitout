@@ -61,7 +61,11 @@ export function useCreateParty() {
       await getSheetProvider().saveParty(party);
       return party;
     },
-    onSuccess: () => {
+    onSuccess: (party) => {
+      // Seed the cache with the party we just wrote instead of letting the
+      // next page do a fresh network read — that read can race the write
+      // that just happened and briefly (and wrongly) resolve to `null`.
+      queryClient.setQueryData(qk.party(party.id), party);
       void queryClient.invalidateQueries({ queryKey: qk.parties });
     },
   });
