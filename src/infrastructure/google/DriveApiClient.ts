@@ -13,10 +13,18 @@ export class DriveApiClient {
     return googleApiFetch<T>(`${DRIVE_API}${path}`, { ...init, apiLabel: "Drive API" });
   }
 
-  async listSpreadsheets(name: string): Promise<DriveFile[]> {
-    const q = encodeURIComponent(
-      `mimeType='application/vnd.google-apps.spreadsheet' and name='${name}' and trashed=false`,
-    );
+  /** Lists spreadsheets by name, optionally restricted to `folderId`'s direct
+   * children. Scoping by folder avoids ambiguity when a same-named
+   * spreadsheet exists elsewhere in the user's Drive (e.g. a stray file from
+   * manual testing or an older app version) — see `SetupPage`. */
+  async listSpreadsheets(name: string, folderId?: string): Promise<DriveFile[]> {
+    const clauses = [
+      "mimeType='application/vnd.google-apps.spreadsheet'",
+      `name='${name}'`,
+      "trashed=false",
+    ];
+    if (folderId) clauses.push(`'${folderId}' in parents`);
+    const q = encodeURIComponent(clauses.join(" and "));
     const data = await this.request<{ files: DriveFile[] }>(
       `/files?q=${q}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime+desc`,
     );

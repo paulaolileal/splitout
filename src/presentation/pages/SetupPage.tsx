@@ -42,7 +42,13 @@ export function SetupPage() {
     async function connect() {
       const drive = new DriveApiClient();
       const initializer = new SheetsInitializer();
-      const found = await drive.listSpreadsheets(SPREADSHEET_TITLE);
+
+      // Resolve the folder first and search *inside* it — a global by-name
+      // search across all of Drive can match an unrelated same-named
+      // spreadsheet (a stray manual copy, a leftover from an older app
+      // version) and silently link the wrong file.
+      const folderId = await drive.getOrCreateFolder(FOLDER_NAME);
+      const found = await drive.listSpreadsheets(SPREADSHEET_TITLE, folderId);
 
       let spreadsheetId: string;
       if (found.length > 0) {
@@ -50,10 +56,8 @@ export function SetupPage() {
         await initializer.ensureSheets(spreadsheetId);
       } else {
         spreadsheetId = await initializer.createSpreadsheet(SPREADSHEET_TITLE);
+        await drive.moveToFolder(spreadsheetId, folderId);
       }
-
-      const folderId = await drive.getOrCreateFolder(FOLDER_NAME);
-      await drive.moveToFolder(spreadsheetId, folderId);
 
       setSpreadsheetId(user.email, spreadsheetId);
       clearSheetProvider();

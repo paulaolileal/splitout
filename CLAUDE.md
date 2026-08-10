@@ -89,7 +89,12 @@ within a party (rewritten as a 0-based index on every save).
 `GoogleSheetsRepository` does **not** track row indices per entity. Every
 `saveParty`/`deleteParty` call:
 
-1. Reads all seven tabs in one `values:batchGet`.
+1. Reads all seven tabs with a `values.get` call per tab (`readAllRows`, run in
+   parallel via `Promise.all`) — deliberately **not** a single multi-range
+   `values:batchGet`: the Sheets API echoes each `ValueRange.range` back
+   normalized to the data's actual extent (e.g. `"parties!A1:F2"`), never the
+   bare sheet name requested, so matching the response to a tab by that
+   string always misses and silently yields "no rows" for every tab.
 2. Reassembles the full `Party[]` graph in memory and applies the mutation.
 3. Clears all seven tabs (`values:batchClear`) and rewrites them from scratch
    in one `values:batchUpdate`.

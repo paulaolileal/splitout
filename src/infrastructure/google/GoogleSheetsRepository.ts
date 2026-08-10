@@ -133,20 +133,38 @@ export class GoogleSheetsRepository implements PartyRepository {
 
   // ---- read ---------------------------------------------------------
 
+  /** Reads a single tab's raw cells via `values.get`. One HTTP call per tab,
+   * fired in parallel by `readAllRows` — deliberately *not* a single
+   * `values:batchGet` across all seven ranges: the Sheets API echoes back
+   * each `ValueRange.range` normalized to the data's actual extent (e.g.
+   * `"parties!A1:F2"`), never the bare sheet name we requested, so matching
+   * the response back to a tab by that string always misses and silently
+   * yields "no rows" for every tab. `values.get` on one range at a time
+   * sidesteps the mismatch entirely — same pattern as sheet-budget's
+   * `GoogleSheetsRepository.getValues`. */
+  private async getValues(range: string): Promise<string[][]> {
+    const data = await this.request<{ values?: string[][] }>(`/values/${range}`);
+    return data.values ?? [];
+  }
+
   private async readAllRows(): Promise<AllRows> {
-    const query = ALL_RANGES.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
-    const data = await this.request<{ valueRanges: { range: string; values?: string[][] }[] }>(
-      `/values:batchGet?${query}`,
-    );
-    const byRange = new Map(data.valueRanges.map((vr) => [vr.range, vr.values ?? []]));
+    const [
+      parties = [],
+      participants = [],
+      expenses = [],
+      sharedWith = [],
+      items = [],
+      allocations = [],
+      weights = [],
+    ] = await Promise.all(ALL_RANGES.map((range) => this.getValues(range)));
     return {
-      [SHEETS.parties]: rowsToRecords<PartyRow>(byRange.get(SHEETS.parties) ?? []),
-      [SHEETS.participants]: rowsToRecords<ParticipantRow>(byRange.get(SHEETS.participants) ?? []),
-      [SHEETS.expenses]: rowsToRecords<ExpenseRow>(byRange.get(SHEETS.expenses) ?? []),
-      [SHEETS.sharedWith]: rowsToRecords<SharedWithRow>(byRange.get(SHEETS.sharedWith) ?? []),
-      [SHEETS.items]: rowsToRecords<ItemRow>(byRange.get(SHEETS.items) ?? []),
-      [SHEETS.allocations]: rowsToRecords<AllocationRow>(byRange.get(SHEETS.allocations) ?? []),
-      [SHEETS.weights]: rowsToRecords<WeightRow>(byRange.get(SHEETS.weights) ?? []),
+      [SHEETS.parties]: rowsToRecords<PartyRow>(parties),
+      [SHEETS.participants]: rowsToRecords<ParticipantRow>(participants),
+      [SHEETS.expenses]: rowsToRecords<ExpenseRow>(expenses),
+      [SHEETS.sharedWith]: rowsToRecords<SharedWithRow>(sharedWith),
+      [SHEETS.items]: rowsToRecords<ItemRow>(items),
+      [SHEETS.allocations]: rowsToRecords<AllocationRow>(allocations),
+      [SHEETS.weights]: rowsToRecords<WeightRow>(weights),
     };
   }
 
