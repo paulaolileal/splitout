@@ -36,7 +36,7 @@ npm run dev
 Você precisa de um **OAuth Client ID** (tipo "Web application") no
 [Google Cloud Console](https://console.cloud.google.com/apis/credentials), com
 a **Google Sheets API** e a **Google Drive API** habilitadas no projeto. Adicione
-a origem local (`http://localhost:5173`) em "Authorized JavaScript origins" e
+a origem local (`http://localhost:8080`) em "Authorized JavaScript origins" e
 coloque o Client ID em `VITE_GOOGLE_CLIENT_ID` no `.env.local`. Não é preciso
 client secret nem redirect URI — o fluxo é OAuth2 implícito, todo client-side.
 
