@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { formatBRL } from "@/domain/format";
 import { useAuthStore } from "@/store/authStore";
 import { clearAccessToken } from "@/services/googleAuth";
+import { ThemeToggle } from "@/presentation/components/ThemeToggle";
 
 export function Logo({ className }: { className?: string | undefined }) {
   return (
@@ -71,6 +72,7 @@ export function AppShell({
           <Logo />
           <div className="flex items-center gap-2">
             {action}
+            <ThemeToggle />
             <UserMenu />
           </div>
         </div>

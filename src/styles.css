@@ -162,6 +162,14 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --avatar-1: oklch(0.64 0.18 25);
+  --avatar-2: oklch(0.66 0.16 60);
+  --avatar-3: oklch(0.6 0.15 145);
+  --avatar-4: oklch(0.6 0.14 210);
+  --avatar-5: oklch(0.58 0.17 300);
+  --avatar-6: oklch(0.62 0.16 340);
+  --avatar-7: oklch(0.62 0.14 180);
+  --avatar-8: oklch(0.57 0.13 265);
 }
 
 @layer base {

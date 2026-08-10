@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useTheme } from "@/hooks/useTheme";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { SpreadsheetRoute } from "./components/SpreadsheetRoute";
 import { LoginPage } from "./pages/LoginPage";
@@ -12,6 +13,8 @@ import { SamplePage } from "./pages/SamplePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
 export function App() {
+  useTheme();
+
   return (
     <Routes>
       <Route path="login" element={<LoginPage />} />

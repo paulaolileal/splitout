@@ -9,6 +9,23 @@
       content="Divida despesas de rolês, viagens e restaurantes. O Splitout calcula quem deve quanto para quem."
     />
     <meta name="theme-color" content="#faf8f2" />
+    <script>
+      // Applies the persisted/system theme before first paint, avoiding a
+      // flash of the light theme for users who prefer dark. Mirrors the
+      // resolution logic in src/hooks/useTheme.ts.
+      (function () {
+        try {
+          var raw = localStorage.getItem("splitout:theme");
+          var theme = raw ? JSON.parse(raw).state.theme : "system";
+          var isDark =
+            theme === "dark" ||
+            (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (isDark) document.documentElement.classList.add("dark");
+        } catch (e) {
+          /* localStorage unavailable or unexpected shape — fall back to light. */
+        }
+      })();
+    </script>
     <meta name="apple-mobile-web-app-title" content="Splitout" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta property="og:title" content="Splitout! — Divida o rolê. Acerte as contas." />

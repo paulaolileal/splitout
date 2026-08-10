@@ -52,6 +52,9 @@ presentation → hooks → domain ← infrastructure
 | `src/hooks/queries.ts` | TanStack Query hooks: `useParties`, `useParty` (returns `{ party, update }`), `useCreateParty`, `useDeleteParty` |
 | `src/store/authStore.ts` | Zustand (persisted, `splitout:auth`): signed-in `UserInfo` (name/email/picture) shown in the UI — **never the token** |
 | `src/store/spreadsheetStore.ts` | Zustand (persisted, `splitout:spreadsheets`): maps each user's email to their spreadsheet id |
+| `src/store/themeStore.ts` | Zustand (persisted, `splitout:theme`): `"light" \| "dark" \| "system"` preference, default `"system"` |
+| `src/hooks/useTheme.ts` | Resolves the active theme (preference + OS `prefers-color-scheme`), toggles the `.dark` class on `<html>`, keeps it in sync with live OS changes, and updates `<meta name="theme-color">`. Called once in `App.tsx` |
+| `src/presentation/components/ThemeToggle.tsx` | Header dropdown (Light/Dark/System) rendered inside `AppShell` |
 | `src/services/config.ts` | Reads `VITE_GOOGLE_CLIENT_ID` and the Drive OAuth scope |
 | `src/services/googleAuth.ts` | Google Identity Services OAuth flow; access token lives **in memory + sessionStorage only** — never localStorage. `initAuthScheduler()` (called once in `main.tsx`) proactively renews the token before it expires and on tab focus/visibility |
 | `src/infrastructure/google/googleApiFetch.ts` | Shared fetch wrapper used by all Google REST clients; ensures a fresh token per call and throws `GoogleAuthError` when silent refresh genuinely fails |
@@ -61,6 +64,19 @@ presentation → hooks → domain ← infrastructure
 | `src/lib/googleAuthToast.ts` | Persistent "reconnect" toast shown whenever a `GoogleAuthError` bubbles up through React Query's cache |
 | `src/presentation/App.tsx` | Route tree (see "Routing") |
 | `src/presentation/components/ErrorBoundary.tsx` | App-level render error boundary (React Router v7's `<Routes>` has no built-in `errorElement`) |
+
+### Theming
+
+`src/styles.css` defines a full light/dark oklch token system (Tailwind v4
+`@theme inline`, `.dark` class via `@custom-variant dark (&:is(.dark *))`).
+Every component consumes semantic classes (`bg-background`, `text-foreground`,
+`bg-primary`, ...) — never raw palette classes — so new UI gets dark mode for
+free. `useTheme` is the only place that decides whether `.dark` is applied;
+`index.html` has an inline pre-hydration script mirroring the same resolution
+logic to avoid a light-theme flash. The PWA manifest's `theme_color`/
+`background_color` (`vite.config.ts`) stay light-only — the manifest spec has
+no `prefers-color-scheme` variant, so that only affects the install splash
+screen, not the app itself.
 
 ### Google Sheets schema
 
