@@ -14,7 +14,7 @@ export function ParticipantReportPage() {
   const { party, isLoading, isError, error, refetch } = useParty(id);
   const [origin, setOrigin] = useState("");
 
-  useDocumentTitle("Acerto individual — Splitout!");
+  useDocumentTitle("Acertando as contas — Splitout!");
   useEffect(() => setOrigin(window.location.origin), []);
 
   if (isError) {
