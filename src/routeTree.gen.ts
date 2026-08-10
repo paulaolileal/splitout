@@ -10,33 +10,79 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RPayloadRouteImport } from './routes/r.$payload'
+import { Route as RoleIdRouteImport } from './routes/role.$id'
+import { Route as RoleNovoRouteImport } from './routes/role.novo'
+import { Route as RoleIdPPidRouteImport } from './routes/role.$id.p.$pid'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RPayloadRoute = RPayloadRouteImport.update({
+  id: '/r/$payload',
+  path: '/r/$payload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoleIdRoute = RoleIdRouteImport.update({
+  id: '/role/$id',
+  path: '/role/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoleNovoRoute = RoleNovoRouteImport.update({
+  id: '/role/novo',
+  path: '/role/novo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoleIdPPidRoute = RoleIdPPidRouteImport.update({
+  id: '/p/$pid',
+  path: '/p/$pid',
+  getParentRoute: () => RoleIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/r/$payload': typeof RPayloadRoute
+  '/role/$id': typeof RoleIdRouteWithChildren
+  '/role/novo': typeof RoleNovoRoute
+  '/role/$id/p/$pid': typeof RoleIdPPidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/r/$payload': typeof RPayloadRoute
+  '/role/$id': typeof RoleIdRouteWithChildren
+  '/role/novo': typeof RoleNovoRoute
+  '/role/$id/p/$pid': typeof RoleIdPPidRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/r/$payload': typeof RPayloadRoute
+  '/role/$id': typeof RoleIdRouteWithChildren
+  '/role/novo': typeof RoleNovoRoute
+  '/role/$id/p/$pid': typeof RoleIdPPidRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    '/' | '/r/$payload' | '/role/$id' | '/role/novo' | '/role/$id/p/$pid'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/r/$payload' | '/role/$id' | '/role/novo' | '/role/$id/p/$pid'
+  id:
+    | '__root__'
+    | '/'
+    | '/r/$payload'
+    | '/role/$id'
+    | '/role/novo'
+    | '/role/$id/p/$pid'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  RPayloadRoute: typeof RPayloadRoute
+  RoleIdRoute: typeof RoleIdRouteWithChildren
+  RoleNovoRoute: typeof RoleNovoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +94,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$payload': {
+      id: '/r/$payload'
+      path: '/r/$payload'
+      fullPath: '/r/$payload'
+      preLoaderRoute: typeof RPayloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/role/$id': {
+      id: '/role/$id'
+      path: '/role/$id'
+      fullPath: '/role/$id'
+      preLoaderRoute: typeof RoleIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/role/novo': {
+      id: '/role/novo'
+      path: '/role/novo'
+      fullPath: '/role/novo'
+      preLoaderRoute: typeof RoleNovoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/role/$id/p/$pid': {
+      id: '/role/$id/p/$pid'
+      path: '/p/$pid'
+      fullPath: '/role/$id/p/$pid'
+      preLoaderRoute: typeof RoleIdPPidRouteImport
+      parentRoute: typeof RoleIdRoute
+    }
   }
 }
 
+interface RoleIdRouteChildren {
+  RoleIdPPidRoute: typeof RoleIdPPidRoute
+}
+
+const RoleIdRouteChildren: RoleIdRouteChildren = {
+  RoleIdPPidRoute: RoleIdPPidRoute,
+}
+
+const RoleIdRouteWithChildren =
+  RoleIdRoute._addFileChildren(RoleIdRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  RPayloadRoute: RPayloadRoute,
+  RoleIdRoute: RoleIdRouteWithChildren,
+  RoleNovoRoute: RoleNovoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

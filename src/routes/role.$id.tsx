@@ -1,0 +1,347 @@
+import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Plus, Trash2, PartyPopper } from "lucide-react";
+import { AppShell, EmptyState, Money, SectionTitle } from "@/components/acerta/primitives";
+import { ParticipantAvatar, ParticipantChip } from "@/components/acerta/ParticipantAvatar";
+import { BalanceCard, ExpenseCard, SettlementCard } from "@/components/acerta/cards";
+import { ExpenseEditor } from "@/components/acerta/ExpenseEditor";
+import { deleteParty, newExpense, newParticipant, useParty } from "@/lib/acerta/store";
+import { partyTotal, settlementFor } from "@/lib/acerta/engine";
+import { formatDate } from "@/lib/acerta/format";
+import type { Expense } from "@/lib/acerta/types";
+
+export const Route = createFileRoute("/role/$id")({
+  head: () => ({
+    meta: [
+      { title: "Seu rolê — Acerta" },
+      {
+        name: "description",
+        content: "Participantes, despesas e o acerto final do seu rolê, calculado automaticamente.",
+      },
+      { property: "og:title", content: "Seu rolê — Acerta" },
+      {
+        property: "og:description",
+        content: "Participantes, despesas e o acerto final do seu rolê.",
+      },
+    ],
+  }),
+  component: PartyPage,
+});
+
+function PartyPage() {
+  const { id } = Route.useParams();
+  const navigate = useNavigate();
+  const { party, update } = useParty(id);
+  const [newName, setNewName] = useState("");
+  const [editing, setEditing] = useState<Expense | null>(null);
+
+  if (party === undefined) {
+    return (
+      <AppShell>
+        <div className="h-40 animate-pulse rounded-3xl bg-muted" />
+      </AppShell>
+    );
+  }
+
+  if (party === null) {
+    return (
+      <AppShell>
+        <EmptyState
+          emoji="🕵️"
+          title="Rolê não encontrado"
+          description="Ele pode ter sido criado em outro dispositivo ou excluído deste navegador."
+          action={
+            <Link to="/" className="mt-2 rounded-2xl bg-primary px-5 py-3 font-bold text-primary-foreground">
+              Voltar para o início
+            </Link>
+          }
+        />
+      </AppShell>
+    );
+  }
+
+  const total = partyTotal(party);
+  const { balances, transfers } = settlementFor(party);
+  const balanceOf = (pid: string) => balances.find((b) => b.participantId === pid);
+
+  const addParticipant = (event: React.FormEvent) => {
+    event.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    if (party.participants.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
+      setNewName("");
+      return;
+    }
+    update((draft) => ({ ...draft, participants: [...draft.participants, newParticipant(name)] }));
+    setNewName("");
+  };
+
+  const removeParticipant = (pid: string) =>
+    update((draft) => ({
+      ...draft,
+      participants: draft.participants.filter((p) => p.id !== pid),
+      expenses: draft.expenses.filter((e) => e.paidBy !== pid),
+    }));
+
+  const saveExpense = (expense: Expense) => {
+    update((draft) => {
+      const index = draft.expenses.findIndex((e) => e.id === expense.id);
+      if (index >= 0) draft.expenses[index] = expense;
+      else draft.expenses.push(expense);
+      return draft;
+    });
+    setEditing(null);
+  };
+
+  return (
+    <AppShell
+      action={
+        <button
+          type="button"
+          onClick={() => {
+            deleteParty(party.id);
+            void navigate({ to: "/" });
+          }}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive"
+        >
+          <Trash2 aria-hidden="true" className="size-3.5" /> Excluir
+        </button>
+      }
+    >
+      <Link
+        to="/"
+        className="mb-5 inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground"
+      >
+        <ArrowLeft aria-hidden="true" className="size-4" /> Seus rolês
+      </Link>
+
+      <header className="animate-rise mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span aria-hidden="true" className="text-4xl">
+            {party.emoji}
+          </span>
+          <div>
+            <h1 className="text-3xl font-extrabold sm:text-4xl">{party.name}</h1>
+            <p className="text-sm text-muted-foreground">
+              {formatDate(party.date)} · {party.participants.length} pessoa
+              {party.participants.length === 1 ? "" : "s"} · {party.expenses.length} despesa
+              {party.expenses.length === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Total do rolê
+          </p>
+          <Money cents={total} size="lg" />
+        </div>
+      </header>
+
+      <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
+        <section aria-labelledby="participantes">
+          <SectionTitle>
+            <span id="participantes">Quem está no rolê?</span>
+          </SectionTitle>
+          <div className="card-surface space-y-3 p-4">
+            <div className="flex flex-wrap gap-2">
+              {party.participants.map((p) => (
+                <ParticipantChip
+                  key={p.id}
+                  id={p.id}
+                  name={p.name}
+                  onRemove={() => removeParticipant(p.id)}
+                />
+              ))}
+              {party.participants.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Comece adicionando as pessoas do rolê.
+                </p>
+              ) : null}
+            </div>
+            <form onSubmit={addParticipant} className="flex gap-2">
+              <input
+                aria-label="Nome da pessoa"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Adicionar pessoa"
+                className="flex-1 rounded-2xl border border-input bg-card px-4 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              />
+              <button
+                type="submit"
+                aria-label="Adicionar pessoa"
+                className="rounded-2xl bg-primary px-4 py-2.5 font-bold text-primary-foreground"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+              </button>
+            </form>
+          </div>
+
+          {party.expenses.length > 0 ? (
+            <div className="mt-6">
+              <SectionTitle>Saldos</SectionTitle>
+              <ul className="space-y-2">
+                {party.participants.map((p) => {
+                  const b = balanceOf(p.id);
+                  return (
+                    <li key={p.id}>
+                      <BalanceCard
+                        participant={p}
+                        paid={b?.paid ?? 0}
+                        owed={b?.owed ?? 0}
+                        balance={b?.balance ?? 0}
+                        onClick={() =>
+                          void navigate({
+                            to: "/role/$id/p/$pid",
+                            params: { id: party.id, pid: p.id },
+                          })
+                        }
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+
+        <div className="space-y-8">
+          <section aria-labelledby="despesas">
+            <SectionTitle
+              aside={
+                party.participants.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditing(
+                        newExpense(
+                          party.participants[0]!.id,
+                          party.participants.map((p) => p.id),
+                        ),
+                      )
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                  >
+                    <Plus aria-hidden="true" className="size-3.5" /> Adicionar despesa
+                  </button>
+                ) : null
+              }
+            >
+              <span id="despesas">Despesas</span>
+            </SectionTitle>
+
+            {party.participants.length === 0 ? (
+              <EmptyState
+                emoji="👥"
+                title="Adicione as pessoas primeiro"
+                description="Depois de listar quem está no rolê, você pode lançar as despesas."
+              />
+            ) : party.expenses.length === 0 ? (
+              <EmptyState
+                emoji="🧾"
+                title="Nenhuma despesa ainda"
+                description="Lance a primeira conta e diga quem pagou e quem consumiu o quê."
+                action={
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditing(
+                        newExpense(
+                          party.participants[0]!.id,
+                          party.participants.map((p) => p.id),
+                        ),
+                      )
+                    }
+                    className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 font-bold text-primary-foreground"
+                  >
+                    <Plus aria-hidden="true" className="size-4" /> Adicionar despesa
+                  </button>
+                }
+              />
+            ) : (
+              <ul className="space-y-3">
+                {party.expenses.map((expense) => (
+                  <li key={expense.id}>
+                    <ExpenseCard
+                      expense={expense}
+                      participants={party.participants}
+                      onClick={() => setEditing(expense)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {transfers.length > 0 ? (
+            <section aria-labelledby="acerto">
+              <div className="card-surface animate-rise overflow-hidden">
+                <div className="flex items-center gap-2 bg-positive-soft px-5 py-4">
+                  <PartyPopper aria-hidden="true" className="size-5 text-positive" />
+                  <h2 id="acerto" className="font-extrabold text-positive">
+                    Rolê acertado!
+                  </h2>
+                </div>
+                <ul className="space-y-3 p-4">
+                  {transfers.map((t, index) => (
+                    <li key={`${t.from}-${t.to}-${index}`}>
+                      <SettlementCard
+                        transfer={t}
+                        participants={party.participants}
+                        index={index}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-wrap gap-2 border-t border-border px-4 py-4">
+                  {party.participants.map((p) => (
+                    <Link
+                      key={p.id}
+                      to="/role/$id/p/$pid"
+                      params={{ id: party.id, pid: p.id }}
+                      className="inline-flex items-center gap-2 rounded-full border border-border bg-card py-1 pr-3 pl-1 text-sm font-semibold"
+                    >
+                      <ParticipantAvatar id={p.id} name={p.name} size="sm" />
+                      Acerto de {p.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </div>
+
+      {party.participants.length > 0 ? (
+        <button
+          type="button"
+          onClick={() =>
+            setEditing(
+              newExpense(
+                party.participants[0]!.id,
+                party.participants.map((p) => p.id),
+              ),
+            )
+          }
+          className="fixed right-5 bottom-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-4 font-bold text-primary-foreground shadow-pop lg:hidden"
+        >
+          <Plus aria-hidden="true" className="size-5" /> Despesa
+        </button>
+      ) : null}
+
+      <ExpenseEditor
+        open={editing !== null}
+        expense={editing}
+        participants={party.participants}
+        onClose={() => setEditing(null)}
+        onSave={saveExpense}
+        onDelete={(expenseId) => {
+          update((draft) => ({
+            ...draft,
+            expenses: draft.expenses.filter((e) => e.id !== expenseId),
+          }));
+          setEditing(null);
+        }}
+      />
+    </AppShell>
+  );
+}
