@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, MessageCircle, Plus, RefreshCw, Trash2, PartyPopper } from "lucide-react";
 import { AppShell, EmptyState, Money, SectionTitle } from "@/presentation/components/primitives";
-import { ParticipantAvatar, ParticipantChip } from "@/presentation/components/ParticipantAvatar";
+import { ParticipantChip } from "@/presentation/components/ParticipantAvatar";
 import { BalanceCard, ExpenseCard, SettlementCard } from "@/presentation/components/cards";
 import { ExpenseEditor } from "@/presentation/components/ExpenseEditor";
 import { PeoplePicker } from "@/presentation/components/PeoplePicker";
@@ -295,22 +295,11 @@ export function PartyPage() {
                         transfer={t}
                         participants={party.participants}
                         index={index}
+                        onClick={() => void navigate(`/role/${party.id}/p/${t.from}`)}
                       />
                     </li>
                   ))}
                 </ul>
-                <div className="flex flex-wrap gap-2 border-t border-border px-4 py-4">
-                  {party.participants.map((p) => (
-                    <Link
-                      key={p.id}
-                      to={`/role/${party.id}/p/${p.id}`}
-                      className="inline-flex items-center gap-2 rounded-full border border-border bg-card py-1 pr-3 pl-1 text-sm font-semibold"
-                    >
-                      <ParticipantAvatar id={p.id} name={p.name} size="sm" />
-                      Acerto de {p.name}
-                    </Link>
-                  ))}
-                </div>
               </div>
             </section>
           ) : null}

@@ -70,17 +70,22 @@ export function SettlementCard({
   transfer,
   participants,
   index = 0,
+  onClick,
 }: {
   transfer: Transfer;
   participants: Participant[];
   index?: number | undefined;
+  onClick?: (() => void) | undefined;
 }) {
   const byId = Object.fromEntries(participants.map((p) => [p.id, p]));
   const from = byId[transfer.from];
   const to = byId[transfer.to];
   return (
-    <div
-      className="card-surface animate-rise flex items-center gap-3 px-4 py-4"
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className="card-surface animate-rise flex w-full items-center gap-3 px-4 py-4 text-left transition-transform enabled:hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-default"
       style={{ animationDelay: `${index * 60}ms` }}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -98,7 +103,7 @@ export function SettlementCard({
       <span className="sr-only">
         {from?.name} paga {formatBRL(transfer.amount)} para {to?.name}
       </span>
-    </div>
+    </button>
   );
 }
 

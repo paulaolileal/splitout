@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AppShell, EmptyState } from "@/presentation/components/primitives";
+import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
 import { ShareActions, ShareReport } from "@/presentation/components/ShareReport";
 import { useParty } from "@/hooks/queries";
 import { buildIndividualShareText, buildSnapshot } from "@/domain/report";
@@ -79,6 +81,29 @@ export function ParticipantReportPage() {
         <ArrowLeft aria-hidden="true" className="size-4" /> Voltar para o rolê
       </Link>
       <div className="mx-auto max-w-xl space-y-6">
+        {party.participants.length > 1 ? (
+          <nav
+            aria-label="Trocar de participante"
+            className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+          >
+            {party.participants.map((p) => (
+              <Link
+                key={p.id}
+                to={`/role/${id}/p/${p.id}`}
+                aria-current={p.id === pid ? "page" : undefined}
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-2 rounded-full border py-1 pr-3 pl-1 text-sm font-semibold transition-colors",
+                  p.id === pid
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:border-foreground/20",
+                )}
+              >
+                <ParticipantAvatar id={p.id} name={p.name} size="sm" />
+                {p.name}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
         <ShareReport snapshot={snapshot} youLabel={snapshot.n} />
         <ShareActions url={url} text={text} />
         <p className="text-center text-xs text-muted-foreground">
