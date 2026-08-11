@@ -158,7 +158,7 @@ export function PartyPage() {
           }
         />
       ) : (
-        <ul className="max-h-[32rem] space-y-3 overflow-y-auto pr-1">
+        <ul className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
           {party.expenses.map((expense) => (
             <li key={expense.id}>
               <ExpenseCard
@@ -280,7 +280,7 @@ export function PartyPage() {
           {party.expenses.length > 0 ? (
             <div className="mt-6">
               <SectionTitle>Saldos</SectionTitle>
-              <ul className="max-h-80 space-y-2 overflow-y-auto pr-1">
+              <ul className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
                 {party.participants.map((p) => {
                   const b = balanceOf(p.id);
                   return (
