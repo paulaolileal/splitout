@@ -113,6 +113,17 @@ interface AllRows {
   [SHEETS.percentages]: PercentageRow[];
 }
 
+/** Google Sheets (via `valueInputOption: USER_ENTERED`) treats a value
+ * starting with `+`, `-`, `=`, or `@` as the start of a formula/expression —
+ * the same rule the Sheets UI itself applies when a human types into a
+ * cell. A Brazilian phone number like "+55 31 9 9999-9999" trips this and
+ * lands as `#ERROR!`. Prefixing with a literal `'` forces the cell to stay
+ * plain text, exactly how the Sheets UI escapes it manually; the
+ * apostrophe never round-trips back out through `values.get`. */
+function asText(value: string): string {
+  return /^[+\-=@]/.test(value) ? `'${value}` : value;
+}
+
 /** Turns a raw `[header, ...rows]` grid into typed records keyed by the
  * (trimmed) header row — sheet cells often carry stray whitespace from
  * manual edits/paste. Missing cells become `""`, never `undefined`. */
@@ -264,20 +275,26 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
     for (const party of parties) {
       partiesRows.push([
         party.id,
-        party.name,
+        asText(party.name),
         party.emoji,
         party.date,
         party.createdAt,
         party.updatedAt,
       ]);
       for (const p of party.participants) {
-        participantsRows.push([p.id, party.id, p.name, p.phone ?? "", p.pixKey ?? ""]);
+        participantsRows.push([
+          p.id,
+          party.id,
+          asText(p.name),
+          asText(p.phone ?? ""),
+          asText(p.pixKey ?? ""),
+        ]);
       }
       party.expenses.forEach((e, ordem) => {
         expensesRows.push([
           e.id,
           party.id,
-          e.description,
+          asText(e.description),
           e.emoji,
           e.totalAmount,
           e.paidBy,
@@ -369,11 +386,11 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
   private async writePeople(people: Person[]): Promise<void> {
     const rows: (string | number)[][] = people.map((p) => [
       p.id,
-      p.name,
-      p.phone ?? "",
+      asText(p.name),
+      asText(p.phone ?? ""),
       p.createdAt,
       p.updatedAt,
-      p.pixKey ?? "",
+      asText(p.pixKey ?? ""),
     ]);
 
     await this.request("/values:batchClear", {

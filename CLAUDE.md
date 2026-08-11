@@ -168,7 +168,7 @@ everything except the two public routes. Unknown routes redirect to `/404`.
 | `/` | `HomePage` — list of parties | requires login + linked sheet |
 | `/role/novo` | `NewPartyPage` | requires login + linked sheet |
 | `/role/:id` | `PartyPage` | requires login + linked sheet |
-| `/role/:id/p/:pid` | `ParticipantReportPage` — generates the share link for one participant | requires login + linked sheet |
+| `/role/:id/p/:pid` | `ParticipantReportPage` — generates the share link for one participant, and is where that participant's WhatsApp send lives (`PartyPage`'s balance list only links here — it has no WhatsApp button of its own) | requires login + linked sheet |
 | `/pessoas` | `PeoplePage` — CRUD for the registered-people directory | requires login + linked sheet |
 
 ### Environment variables

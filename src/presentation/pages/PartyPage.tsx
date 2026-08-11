@@ -7,6 +7,7 @@ import { BalanceCard, ExpenseCard, SettlementCard } from "@/presentation/compone
 import { ExpenseEditor } from "@/presentation/components/ExpenseEditor";
 import { PeoplePicker } from "@/presentation/components/PeoplePicker";
 import { WhatsAppShareModal } from "@/presentation/components/WhatsAppShareModal";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeleteParty, useParty } from "@/hooks/queries";
 import { newExpense } from "@/domain/factories";
 import { partyTotal, settlementFor } from "@/domain/engine";
@@ -20,7 +21,7 @@ export function PartyPage() {
   const { party, isLoading, isError, error, refetch, update } = useParty(id);
   const deleteParty = useDeleteParty();
   const [editing, setEditing] = useState<Expense | null>(null);
-  const [waTarget, setWaTarget] = useState<Participant | "group" | null>(null);
+  const [waGroupOpen, setWaGroupOpen] = useState(false);
 
   useDocumentTitle(party ? `${party.name} — Splitout!` : "Seu rolê — Splitout!");
 
@@ -83,12 +84,6 @@ export function PartyPage() {
     update((draft) => ({ ...draft, participants: [...draft.participants, participant] }));
   };
 
-  const setParticipantPhone = (pid: string, phone: string) =>
-    update((draft) => ({
-      ...draft,
-      participants: draft.participants.map((p) => (p.id === pid ? { ...p, phone } : p)),
-    }));
-
   const removeParticipant = (pid: string) =>
     update((draft) => ({
       ...draft,
@@ -105,6 +100,110 @@ export function PartyPage() {
     });
     setEditing(null);
   };
+
+  // Rendered either inside the "Despesas"/"Rolê acertado" tabs (when there's
+  // a settlement to show) or standalone (when there isn't yet) — see the
+  // `transfers.length > 0` branch below.
+  const expensesSection = (
+    <>
+      <SectionTitle
+        aside={
+          party.participants.length > 0 ? (
+            <button
+              type="button"
+              onClick={() =>
+                setEditing(
+                  newExpense(
+                    party.participants[0]!.id,
+                    party.participants.map((p) => p.id),
+                  ),
+                )
+              }
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+            >
+              <Plus aria-hidden="true" className="size-3.5" /> Adicionar despesa
+            </button>
+          ) : null
+        }
+      >
+        <span id="despesas">Despesas</span>
+      </SectionTitle>
+
+      {party.participants.length === 0 ? (
+        <EmptyState
+          emoji="👥"
+          title="Adicione as pessoas primeiro"
+          description="Depois de listar quem está no rolê, você pode lançar as despesas."
+        />
+      ) : party.expenses.length === 0 ? (
+        <EmptyState
+          emoji="🧾"
+          title="Nenhuma despesa ainda"
+          description="Lance a primeira conta e diga quem pagou e quem consumiu o quê."
+          action={
+            <button
+              type="button"
+              onClick={() =>
+                setEditing(
+                  newExpense(
+                    party.participants[0]!.id,
+                    party.participants.map((p) => p.id),
+                  ),
+                )
+              }
+              className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 font-bold text-primary-foreground"
+            >
+              <Plus aria-hidden="true" className="size-4" /> Adicionar despesa
+            </button>
+          }
+        />
+      ) : (
+        <ul className="max-h-[32rem] space-y-3 overflow-y-auto pr-1">
+          {party.expenses.map((expense) => (
+            <li key={expense.id}>
+              <ExpenseCard
+                expense={expense}
+                participants={party.participants}
+                onClick={() => setEditing(expense)}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+
+  const settlementSection = (
+    <div className="card-surface animate-rise overflow-hidden">
+      <div className="flex items-center justify-between gap-2 bg-positive-soft px-5 py-4">
+        <div className="flex items-center gap-2">
+          <PartyPopper aria-hidden="true" className="size-5 text-positive" />
+          <h2 id="acerto" className="font-extrabold text-positive">
+            Rolê acertado!
+          </h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => setWaGroupOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-positive/30 bg-card px-3 py-1.5 text-xs font-bold text-positive"
+        >
+          <MessageCircle aria-hidden="true" className="size-3.5" /> Enviar no WhatsApp
+        </button>
+      </div>
+      <ul className="max-h-[28rem] space-y-3 overflow-y-auto p-4">
+        {transfers.map((t, index) => (
+          <li key={`${t.from}-${t.to}-${index}`}>
+            <SettlementCard
+              transfer={t}
+              participants={party.participants}
+              index={index}
+              onClick={() => void navigate(`/role/${party.id}/p/${t.from}`)}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 
   return (
     <AppShell
@@ -181,7 +280,7 @@ export function PartyPage() {
           {party.expenses.length > 0 ? (
             <div className="mt-6">
               <SectionTitle>Saldos</SectionTitle>
-              <ul className="space-y-2">
+              <ul className="max-h-80 space-y-2 overflow-y-auto pr-1">
                 {party.participants.map((p) => {
                   const b = balanceOf(p.id);
                   return (
@@ -192,7 +291,6 @@ export function PartyPage() {
                         owed={b?.owed ?? 0}
                         balance={b?.balance ?? 0}
                         onClick={() => void navigate(`/role/${party.id}/p/${p.id}`)}
-                        onWhatsApp={() => setWaTarget(p)}
                       />
                     </li>
                   );
@@ -202,108 +300,22 @@ export function PartyPage() {
           ) : null}
         </section>
 
-        <div className="space-y-8">
-          <section aria-labelledby="despesas">
-            <SectionTitle
-              aside={
-                party.participants.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditing(
-                        newExpense(
-                          party.participants[0]!.id,
-                          party.participants.map((p) => p.id),
-                        ),
-                      )
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
-                  >
-                    <Plus aria-hidden="true" className="size-3.5" /> Adicionar despesa
-                  </button>
-                ) : null
-              }
-            >
-              <span id="despesas">Despesas</span>
-            </SectionTitle>
-
-            {party.participants.length === 0 ? (
-              <EmptyState
-                emoji="👥"
-                title="Adicione as pessoas primeiro"
-                description="Depois de listar quem está no rolê, você pode lançar as despesas."
-              />
-            ) : party.expenses.length === 0 ? (
-              <EmptyState
-                emoji="🧾"
-                title="Nenhuma despesa ainda"
-                description="Lance a primeira conta e diga quem pagou e quem consumiu o quê."
-                action={
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditing(
-                        newExpense(
-                          party.participants[0]!.id,
-                          party.participants.map((p) => p.id),
-                        ),
-                      )
-                    }
-                    className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 font-bold text-primary-foreground"
-                  >
-                    <Plus aria-hidden="true" className="size-4" /> Adicionar despesa
-                  </button>
-                }
-              />
-            ) : (
-              <ul className="space-y-3">
-                {party.expenses.map((expense) => (
-                  <li key={expense.id}>
-                    <ExpenseCard
-                      expense={expense}
-                      participants={party.participants}
-                      onClick={() => setEditing(expense)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {transfers.length > 0 ? (
-            <section aria-labelledby="acerto">
-              <div className="card-surface animate-rise overflow-hidden">
-                <div className="flex items-center justify-between gap-2 bg-positive-soft px-5 py-4">
-                  <div className="flex items-center gap-2">
-                    <PartyPopper aria-hidden="true" className="size-5 text-positive" />
-                    <h2 id="acerto" className="font-extrabold text-positive">
-                      Rolê acertado!
-                    </h2>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setWaTarget("group")}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-positive/30 bg-card px-3 py-1.5 text-xs font-bold text-positive"
-                  >
-                    <MessageCircle aria-hidden="true" className="size-3.5" /> Enviar no WhatsApp
-                  </button>
-                </div>
-                <ul className="space-y-3 p-4">
-                  {transfers.map((t, index) => (
-                    <li key={`${t.from}-${t.to}-${index}`}>
-                      <SettlementCard
-                        transfer={t}
-                        participants={party.participants}
-                        index={index}
-                        onClick={() => void navigate(`/role/${party.id}/p/${t.from}`)}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-          ) : null}
-        </div>
+        {transfers.length > 0 ? (
+          <Tabs defaultValue="despesas">
+            <TabsList className="mb-4 grid w-full grid-cols-2">
+              <TabsTrigger value="despesas">Despesas</TabsTrigger>
+              <TabsTrigger value="acerto">Rolê acertado</TabsTrigger>
+            </TabsList>
+            <TabsContent value="despesas" className="mt-0">
+              {expensesSection}
+            </TabsContent>
+            <TabsContent value="acerto" className="mt-0">
+              {settlementSection}
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <section aria-labelledby="despesas">{expensesSection}</section>
+        )}
       </div>
 
       {party.participants.length > 0 ? (
@@ -338,13 +350,7 @@ export function PartyPage() {
         }}
       />
 
-      <WhatsAppShareModal
-        open={waTarget !== null}
-        party={party}
-        participant={waTarget === "group" || waTarget === null ? undefined : waTarget}
-        onClose={() => setWaTarget(null)}
-        onSavePhone={(pid, phone) => setParticipantPhone(pid, phone)}
-      />
+      <WhatsAppShareModal open={waGroupOpen} party={party} onClose={() => setWaGroupOpen(false)} />
     </AppShell>
   );
 }
