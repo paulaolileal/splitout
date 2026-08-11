@@ -103,31 +103,39 @@ export function PartyPage() {
 
   // Rendered either inside the "Despesas"/"Rolê acertado" tabs (when there's
   // a settlement to show) or standalone (when there isn't yet) — see the
-  // `transfers.length > 0` branch below.
+  // `transfers.length > 0` branch below. Its parent is always a
+  // `flex flex-col max-h-[…]` column (same cap as the "Saldos" column on the
+  // left), so the header (`shrink-0`) stays put and the list
+  // (`flex-1 min-h-0 overflow-y-auto`) grows to fill whatever room is left —
+  // a fixed height on the list alone can't do this because "Saldos" starts
+  // lower on the page (below the participants card) and needs correspondingly
+  // less room to still end at the same height as "Despesas".
   const expensesSection = (
     <>
-      <SectionTitle
-        aside={
-          party.participants.length > 0 ? (
-            <button
-              type="button"
-              onClick={() =>
-                setEditing(
-                  newExpense(
-                    party.participants[0]!.id,
-                    party.participants.map((p) => p.id),
-                  ),
-                )
-              }
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
-            >
-              <Plus aria-hidden="true" className="size-3.5" /> Adicionar despesa
-            </button>
-          ) : null
-        }
-      >
-        <span id="despesas">Despesas</span>
-      </SectionTitle>
+      <div className="shrink-0">
+        <SectionTitle
+          aside={
+            party.participants.length > 0 ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setEditing(
+                    newExpense(
+                      party.participants[0]!.id,
+                      party.participants.map((p) => p.id),
+                    ),
+                  )
+                }
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+              >
+                <Plus aria-hidden="true" className="size-3.5" /> Adicionar despesa
+              </button>
+            ) : null
+          }
+        >
+          <span id="despesas">Despesas</span>
+        </SectionTitle>
+      </div>
 
       {party.participants.length === 0 ? (
         <EmptyState
@@ -158,7 +166,7 @@ export function PartyPage() {
           }
         />
       ) : (
-        <ul className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+        <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
           {party.expenses.map((expense) => (
             <li key={expense.id}>
               <ExpenseCard
@@ -174,8 +182,8 @@ export function PartyPage() {
   );
 
   const settlementSection = (
-    <div className="card-surface animate-rise overflow-hidden">
-      <div className="flex items-center justify-between gap-2 bg-positive-soft px-5 py-4">
+    <div className="card-surface animate-rise flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between gap-2 bg-positive-soft px-5 py-4">
         <div className="flex items-center gap-2">
           <PartyPopper aria-hidden="true" className="size-5 text-positive" />
           <h2 id="acerto" className="font-extrabold text-positive">
@@ -190,7 +198,7 @@ export function PartyPage() {
           <MessageCircle aria-hidden="true" className="size-3.5" /> Enviar no WhatsApp
         </button>
       </div>
-      <ul className="max-h-[28rem] space-y-3 overflow-y-auto p-4">
+      <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {transfers.map((t, index) => (
           <li key={`${t.from}-${t.to}-${index}`}>
             <SettlementCard
@@ -250,37 +258,47 @@ export function PartyPage() {
         </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
-        <section aria-labelledby="participantes">
-          <SectionTitle>
-            <span id="participantes">Quem está no rolê?</span>
-          </SectionTitle>
-          <div className="card-surface space-y-3 p-4">
-            <div className="flex flex-wrap gap-2">
-              {party.participants.map((p) => (
-                <ParticipantChip
-                  key={p.id}
-                  id={p.id}
-                  name={p.name}
-                  onRemove={() => removeParticipant(p.id)}
-                />
-              ))}
-              {party.participants.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Comece adicionando as pessoas do rolê.
-                </p>
-              ) : null}
+      {/* Both columns share the same `max-h-[30rem]` cap, measured from the
+          top of this row. "Saldos" starts lower than "Despesas" (it sits
+          below the participants card), so giving both columns — not just
+          their inner lists — the same cap and letting the list flex to fill
+          what's left naturally gives "Saldos" a shorter list, which is what
+          makes the two columns actually end at the same height. */}
+      <div className="grid gap-8 lg:grid-cols-[320px_1fr] lg:items-stretch">
+        <section aria-labelledby="participantes" className="flex max-h-[30rem] flex-col">
+          <div className="shrink-0">
+            <SectionTitle>
+              <span id="participantes">Quem está no rolê?</span>
+            </SectionTitle>
+            <div className="card-surface space-y-3 p-4">
+              <div className="flex flex-wrap gap-2">
+                {party.participants.map((p) => (
+                  <ParticipantChip
+                    key={p.id}
+                    id={p.id}
+                    name={p.name}
+                    onRemove={() => removeParticipant(p.id)}
+                  />
+                ))}
+                {party.participants.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Comece adicionando as pessoas do rolê.
+                  </p>
+                ) : null}
+              </div>
+              <PeoplePicker
+                existingNames={party.participants.map((p) => p.name)}
+                onPick={addParticipant}
+              />
             </div>
-            <PeoplePicker
-              existingNames={party.participants.map((p) => p.name)}
-              onPick={addParticipant}
-            />
           </div>
 
           {party.expenses.length > 0 ? (
-            <div className="mt-6">
-              <SectionTitle>Saldos</SectionTitle>
-              <ul className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+            <div className="mt-6 flex min-h-0 flex-1 flex-col">
+              <div className="shrink-0">
+                <SectionTitle>Saldos</SectionTitle>
+              </div>
+              <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
                 {party.participants.map((p) => {
                   const b = balanceOf(p.id);
                   return (
@@ -301,20 +319,22 @@ export function PartyPage() {
         </section>
 
         {transfers.length > 0 ? (
-          <Tabs defaultValue="despesas">
-            <TabsList className="mb-4 grid w-full grid-cols-2">
+          <Tabs defaultValue="despesas" className="flex max-h-[30rem] flex-col">
+            <TabsList className="mb-4 grid w-full shrink-0 grid-cols-2">
               <TabsTrigger value="despesas">Despesas</TabsTrigger>
               <TabsTrigger value="acerto">Rolê acertado</TabsTrigger>
             </TabsList>
-            <TabsContent value="despesas" className="mt-0">
+            <TabsContent value="despesas" className="mt-0 flex min-h-0 flex-1 flex-col">
               {expensesSection}
             </TabsContent>
-            <TabsContent value="acerto" className="mt-0">
+            <TabsContent value="acerto" className="mt-0 flex min-h-0 flex-1 flex-col">
               {settlementSection}
             </TabsContent>
           </Tabs>
         ) : (
-          <section aria-labelledby="despesas">{expensesSection}</section>
+          <section aria-labelledby="despesas" className="flex max-h-[30rem] flex-col">
+            {expensesSection}
+          </section>
         )}
       </div>
 
