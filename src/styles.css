@@ -222,6 +222,17 @@
   *::-webkit-scrollbar-corner {
     background: transparent;
   }
+
+  /* Browsers don't default form controls to a pointer cursor, so every
+     plain <button> (cards, dialogs, editors, ...) would otherwise show the
+     arrow cursor on hover. Set it once here instead of repeating
+     `cursor-pointer` on each button; disabled buttons and elements that
+     opt out with `cursor-default`/`cursor-not-allowed` keep their own
+     cursor since those utility classes live in a later Tailwind layer. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
 @utility card-surface {
