@@ -3,7 +3,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { AppShell, Money, SectionTitle } from "@/presentation/components/primitives";
 import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
 import { ExpenseCard, BalanceCard } from "@/presentation/components/cards";
-import { resolveIcon } from "@/presentation/icons/registry";
+import { AppIcon } from "@/presentation/icons/registry";
 import { sampleParty } from "@/domain/sample";
 import { partyTotal, settlementFor } from "@/domain/engine";
 import { formatDate } from "@/domain/format";
@@ -15,7 +15,6 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 export function SamplePage() {
   useDocumentTitle("Exemplo — Splitout!");
   const party = sampleParty();
-  const PartyIcon = resolveIcon(party.emoji);
   const total = partyTotal(party);
   const { balances, transfers } = settlementFor(party);
   const balanceOf = (pid: string) => balances.find((b) => b.participantId === pid);
@@ -49,7 +48,7 @@ export function SamplePage() {
       <header className="animate-rise mb-8 flex flex-wrap items-end justify-between gap-4">
         <div className="flex items-center gap-3">
           <span aria-hidden="true">
-            <PartyIcon theme="multi-color" size={44} />
+            <AppIcon iconKey={party.emoji} size={44} />
           </span>
           <div>
             <h1 className="text-3xl font-extrabold sm:text-4xl">{party.name}</h1>

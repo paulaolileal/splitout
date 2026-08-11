@@ -16,7 +16,7 @@ import { ExpenseEditor } from "@/presentation/components/ExpenseEditor";
 import { PeoplePicker } from "@/presentation/components/PeoplePicker";
 import { WhatsAppShareModal } from "@/presentation/components/WhatsAppShareModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { resolveIcon } from "@/presentation/icons/registry";
+import { AppIcon } from "@/presentation/icons/registry";
 import { useDeleteParty, useParty } from "@/hooks/queries";
 import { newExpense } from "@/domain/factories";
 import { partyTotal, settlementFor } from "@/domain/engine";
@@ -84,7 +84,6 @@ export function PartyPage() {
     );
   }
 
-  const PartyIcon = resolveIcon(party.emoji);
   const total = partyTotal(party);
   const { balances, transfers } = settlementFor(party);
   const balanceOf = (pid: string) => balances.find((b) => b.participantId === pid);
@@ -250,7 +249,7 @@ export function PartyPage() {
       <header className="animate-rise mb-8 flex flex-wrap items-end justify-between gap-4">
         <div className="flex items-center gap-3">
           <span aria-hidden="true">
-            <PartyIcon theme="multi-color" size={44} />
+            <AppIcon iconKey={party.emoji} size={44} />
           </span>
           <div>
             <h1 className="text-3xl font-extrabold sm:text-4xl">{party.name}</h1>

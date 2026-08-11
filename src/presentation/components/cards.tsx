@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { formatBRL } from "@/domain/format";
 import type { Expense, Participant, Transfer } from "@/domain/types";
 import { allocateExpense, expenseIsBalanced, splitTotal } from "@/domain/engine";
-import { resolveIcon } from "@/presentation/icons/registry";
+import { AppIcon } from "@/presentation/icons/registry";
 import { ParticipantAvatar } from "./ParticipantAvatar";
 import { Money } from "./primitives";
 
@@ -27,7 +27,6 @@ export function ExpenseCard({
   const alloc = allocateExpense(expense);
   const involved = Object.keys(alloc).filter((id) => (alloc[id] ?? 0) > 0);
   const ok = expenseIsBalanced(expense);
-  const ExpenseIcon = resolveIcon(expense.emoji);
 
   return (
     <button
@@ -37,7 +36,7 @@ export function ExpenseCard({
     >
       <div className="flex items-start gap-3">
         <span aria-hidden="true" className="grid size-10 place-items-center rounded-2xl bg-muted">
-          <ExpenseIcon theme="multi-color" size={22} />
+          <AppIcon iconKey={expense.emoji} size={22} />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">

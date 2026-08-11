@@ -9,7 +9,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { ICON_CATEGORIES, resolveIcon } from "@/presentation/icons/registry";
+import { AppIcon, ICON_CATEGORIES } from "@/presentation/icons/registry";
 
 /** Grid item for a single icon option inside the popover. Renders as a
  * `CommandItem` (not a plain button) so cmdk's item count stays accurate —
@@ -25,7 +25,6 @@ function IconOptionItem({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const Icon = resolveIcon(iconKey);
   return (
     <CommandItem
       value={iconKey}
@@ -37,7 +36,7 @@ function IconOptionItem({
         selected ? "border-primary bg-primary/10" : "border-transparent",
       )}
     >
-      <Icon theme="multi-color" size={24} />
+      <AppIcon iconKey={iconKey} size={24} />
     </CommandItem>
   );
 }
@@ -58,7 +57,6 @@ export function IconPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const SelectedIcon = resolveIcon(value);
 
   const trimmedQuery = query.trim().toLowerCase();
   const filteredCategories = ICON_CATEGORIES.map((category) => ({
@@ -76,13 +74,22 @@ export function IconPicker({
           aria-label={label}
           className="grid size-12 shrink-0 place-items-center rounded-2xl border border-input bg-card"
         >
-          <SelectedIcon theme="multi-color" size={26} />
+          <AppIcon iconKey={value} size={26} />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80 rounded-2xl p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput placeholder="Buscar ícone…" value={query} onValueChange={setQuery} />
-          <CommandList className="max-h-72">
+          {/* Stops the wheel/touch event from bubbling to `document` — Radix's
+           * Dialog scroll-lock (`react-remove-scroll`, active whenever this
+           * picker opens inside ExpenseEditor's modal) listens there and
+           * blocks scrolling on anything outside the dialog's own content,
+           * which otherwise includes this popover's portaled list. */}
+          <CommandList
+            className="max-h-72"
+            onWheel={(event) => event.stopPropagation()}
+            onTouchMove={(event) => event.stopPropagation()}
+          >
             <CommandEmpty>Nenhum ícone encontrado.</CommandEmpty>
             {filteredCategories.map((category) => (
               <CommandGroup

@@ -10,7 +10,7 @@ import {
   useFooterProximity,
 } from "@/presentation/components/primitives";
 import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
-import { resolveIcon } from "@/presentation/icons/registry";
+import { AppIcon } from "@/presentation/icons/registry";
 import { useParties } from "@/hooks/queries";
 import { partyTotal, settlementFor } from "@/domain/engine";
 import { formatDate } from "@/domain/format";
@@ -74,7 +74,6 @@ export function HomePage() {
           {parties.map((party, index) => {
             const total = partyTotal(party);
             const { transfers } = settlementFor(party);
-            const PartyIcon = resolveIcon(party.emoji);
             return (
               <li key={party.id}>
                 <Link
@@ -85,7 +84,7 @@ export function HomePage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <span aria-hidden="true">
-                        <PartyIcon theme="multi-color" size={28} />
+                        <AppIcon iconKey={party.emoji} size={28} />
                       </span>
                       <div>
                         <p className="font-bold">{party.name}</p>
