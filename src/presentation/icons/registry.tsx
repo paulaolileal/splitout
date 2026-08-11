@@ -307,28 +307,34 @@ export type IconParkIcon = ComponentType<IconParkIconProps>;
 
 /** The 4 slots icon-park's "multi-color" theme reads from `fill`:
  * `[outStrokeColor, outFillColor, innerStrokeColor, innerFillColor]`.
- * Not every icon's SVG paths use all 4 (many only use the first two), but
- * providing all 4 avoids the library's own defaults (a fixed white/teal
- * pair) leaking through on icons that do use the inner slots. */
+ * Not every icon's SVG art uses all 4 — a good number of icon-park's
+ * catalogue (`carrot`, `croissant`, `chopsticks-fork`, `bone`, `garlic`,
+ * `cocktail`, ...) is drawn as pure line art: every path is a `stroke`
+ * using only `colors[0]`, with no shape ever filled from `colors[1]`. For
+ * those, `colors[0]` is the *only* channel that ever reaches the screen —
+ * if it's a flat neutral shared by every icon (as it was before), that
+ * whole subset renders colorless no matter what the other 3 slots hold.
+ * That's why each `PALETTE` tuple's first slot is a deep shade of its own
+ * hue instead of one shared dark gray: it doubles as both the ink outline
+ * for icons that do fill a shape and the only visible color for the ones
+ * that don't. */
 type IconFill = readonly [string, string, string, string];
-
-const OUTLINE = "#2B2B2B";
 
 /** Named "sticker" palettes, one per subject hue, reused across the whole
  * catalogue instead of a bespoke color pair per icon (240+ icons). Each
- * tuple is `[outline, main fill, inner highlight, inner fill]`. */
+ * tuple is `[deep outline, main fill, inner highlight, inner fill]`. */
 const PALETTE = {
-  yellow: [OUTLINE, "#FFD93B", "#FFFFFF", "#FFED9E"],
-  amber: [OUTLINE, "#F2A93B", "#FFFFFF", "#FFCF7A"],
-  orange: [OUTLINE, "#FF8A3D", "#FFFFFF", "#FFBC8A"],
-  red: [OUTLINE, "#FF6B6B", "#FFFFFF", "#FFAFAF"],
-  pink: [OUTLINE, "#FF8FBE", "#FFFFFF", "#FFC3DD"],
-  purple: [OUTLINE, "#A987F5", "#FFFFFF", "#D6C2FB"],
-  blue: [OUTLINE, "#4FA3F7", "#FFFFFF", "#A8D2FC"],
-  teal: [OUTLINE, "#3FC1B0", "#FFFFFF", "#9BE3D8"],
-  green: [OUTLINE, "#6BC96B", "#FFFFFF", "#B3E3B3"],
-  brown: [OUTLINE, "#B5794A", "#FFFFFF", "#D9AE83"],
-  gray: [OUTLINE, "#9AA5B1", "#FFFFFF", "#D3D9DE"],
+  yellow: ["#8A6A00", "#FFD93B", "#FFFFFF", "#FFED9E"],
+  amber: ["#8A5B00", "#F2A93B", "#FFFFFF", "#FFCF7A"],
+  orange: ["#99450B", "#FF8A3D", "#FFFFFF", "#FFBC8A"],
+  red: ["#992222", "#FF6B6B", "#FFFFFF", "#FFAFAF"],
+  pink: ["#99295E", "#FF8FBE", "#FFFFFF", "#FFC3DD"],
+  purple: ["#5A3A99", "#A987F5", "#FFFFFF", "#D6C2FB"],
+  blue: ["#1B5C99", "#4FA3F7", "#FFFFFF", "#A8D2FC"],
+  teal: ["#146157", "#3FC1B0", "#FFFFFF", "#9BE3D8"],
+  green: ["#2E7A2E", "#6BC96B", "#FFFFFF", "#B3E3B3"],
+  brown: ["#5A3820", "#B5794A", "#FFFFFF", "#D9AE83"],
+  gray: ["#3F464D", "#9AA5B1", "#FFFFFF", "#D3D9DE"],
 } as const satisfies Record<string, IconFill>;
 
 export interface IconOption {
