@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { AppShell } from "@/presentation/components/primitives";
+import { DatePicker } from "@/presentation/components/DatePicker";
 import { IconPicker } from "@/presentation/components/IconPicker";
 import { DEFAULT_PARTY_ICON_KEY } from "@/presentation/icons/registry";
 import { useCreateParty } from "@/hooks/queries";
@@ -65,13 +66,7 @@ export function NewPartyPage() {
           <label htmlFor="date" className="mb-2 block text-sm font-semibold">
             Data
           </label>
-          <input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-2xl border border-input bg-card px-4 py-3 font-medium"
-          />
+          <DatePicker id="date" value={date} onChange={setDate} />
         </div>
 
         {createParty.isError ? (

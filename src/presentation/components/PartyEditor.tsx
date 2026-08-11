@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Caution } from "@icon-park/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePicker } from "@/presentation/components/DatePicker";
 import { IconPicker } from "@/presentation/components/IconPicker";
 import type { Party } from "@/domain/types";
 
@@ -76,12 +77,11 @@ export function PartyEditor({
             <label htmlFor="party-editor-date" className="mb-2 block text-sm font-semibold">
               Data
             </label>
-            <input
+            <DatePicker
               id="party-editor-date"
-              type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-2xl border border-input bg-card px-4 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              onChange={setDate}
+              className="py-2.5 text-sm"
             />
           </div>
           {touched && error ? (
