@@ -61,9 +61,9 @@ export function HomePage() {
                   type="button"
                   title="Consolidar"
                   onClick={() => setSelectionMode(true)}
-                  className="inline-flex items-center justify-center rounded-full bg-foreground p-1.5 text-background shadow-pop"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-bold text-background shadow-pop"
                 >
-                  <CheckSquare aria-hidden="true" className="size-4" />
+                  <CheckSquare aria-hidden="true" className="size-3.5" /> Consolidar
                 </button>
               ) : null}
               <Link
