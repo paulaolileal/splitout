@@ -32,6 +32,7 @@ import type {
   Person,
   SplitType,
 } from "@/domain/types";
+import { DEFAULT_EXPENSE_ICON_KEY, DEFAULT_PARTY_ICON_KEY } from "@/domain/icons";
 import { googleApiFetch } from "./googleApiFetch";
 
 const API = "https://sheets.googleapis.com/v4/spreadsheets";
@@ -234,7 +235,7 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
       const expense: Expense = {
         id: r.expense_id,
         description: r.descricao,
-        emoji: r.emoji || "🧾",
+        emoji: r.emoji || DEFAULT_EXPENSE_ICON_KEY,
         totalAmount: Number(r.valor_total_centavos) || 0,
         paidBy: r.paid_by,
         splitType: (r.split_type as SplitType) || "equal",
@@ -253,7 +254,7 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
       .map((r) => ({
         id: r.party_id,
         name: r.nome,
-        emoji: r.emoji || "🎉",
+        emoji: r.emoji || DEFAULT_PARTY_ICON_KEY,
         date: r.data,
         participants: participantsByParty.get(r.party_id) ?? [],
         expenses: expensesByParty.get(r.party_id) ?? [],

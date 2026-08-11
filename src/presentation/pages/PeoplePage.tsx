@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { PeopleSearch } from "@icon-park/react";
 import { AppShell, EmptyState, SectionTitle } from "@/presentation/components/primitives";
 import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
 import { PersonEditor } from "@/presentation/components/PersonEditor";
@@ -54,7 +55,7 @@ export function PeoplePage() {
           <div className="h-24 animate-pulse rounded-3xl bg-muted" />
         ) : people.length === 0 ? (
           <EmptyState
-            emoji="🙋"
+            icon={<PeopleSearch theme="multi-color" size={40} />}
             title="Ninguém cadastrado ainda"
             description="Cadastre as pessoas que mais participam dos seus rolês."
             action={

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Check, Copy, QrCode, Share2 } from "lucide-react";
+import { CooperativeHandshake, Transfer } from "@icon-park/react";
 import { formatBRL, formatDate } from "@/domain/format";
 import type { ShareSnapshot } from "@/domain/share";
 import { ParticipantAvatar } from "./ParticipantAvatar";
@@ -199,8 +200,8 @@ export function ShareReport({
 
       {snapshot.pay.length > 0 ? (
         <section>
-          <h2 className="mb-2 text-sm font-bold tracking-wide text-muted-foreground uppercase">
-            💸 {youLabel} paga para
+          <h2 className="mb-2 flex items-center gap-1.5 text-sm font-bold tracking-wide text-muted-foreground uppercase">
+            <Transfer theme="multi-color" size={16} /> {youLabel} paga para
           </h2>
           <ul className="space-y-2">
             {snapshot.pay.map((line, i) => (
@@ -217,8 +218,8 @@ export function ShareReport({
 
       {snapshot.get.length > 0 ? (
         <section>
-          <h2 className="mb-2 text-sm font-bold tracking-wide text-muted-foreground uppercase">
-            🤝 {youLabel} recebe de
+          <h2 className="mb-2 flex items-center gap-1.5 text-sm font-bold tracking-wide text-muted-foreground uppercase">
+            <CooperativeHandshake theme="multi-color" size={16} /> {youLabel} recebe de
           </h2>
           <ul className="space-y-2">
             {snapshot.get.map((line, i) => (

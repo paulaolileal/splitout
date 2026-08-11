@@ -1,4 +1,5 @@
 import type { Expense, Participant, Party, Person } from "./types";
+import { DEFAULT_EXPENSE_ICON_KEY } from "./icons";
 
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10);
@@ -33,7 +34,7 @@ export function newExpense(paidBy: string, sharedWith: string[]): Expense {
   return {
     id: uid(),
     description: "",
-    emoji: "🧾",
+    emoji: DEFAULT_EXPENSE_ICON_KEY,
     totalAmount: 0,
     paidBy,
     splitType: "equal",

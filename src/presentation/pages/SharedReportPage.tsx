@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { Unlink } from "@icon-park/react";
 import { AppShell, EmptyState } from "@/presentation/components/primitives";
 import { ShareReport } from "@/presentation/components/ShareReport";
 import { decodeSnapshot } from "@/domain/share";
@@ -31,7 +32,7 @@ export function SharedReportPage() {
           </>
         ) : (
           <EmptyState
-            emoji="🔗"
+            icon={<Unlink theme="multi-color" size={40} />}
             title="Link inválido"
             description="Esse link de acerto parece estar incompleto ou expirado. Peça um novo para quem organizou o rolê."
           />

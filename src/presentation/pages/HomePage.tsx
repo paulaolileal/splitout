@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Plus, RefreshCw } from "lucide-react";
+import { Caution, PartyBalloon, Success } from "@icon-park/react";
 import {
   AppShell,
   EmptyState,
@@ -9,6 +10,7 @@ import {
   useFooterProximity,
 } from "@/presentation/components/primitives";
 import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
+import { resolveIcon } from "@/presentation/icons/registry";
 import { useParties } from "@/hooks/queries";
 import { partyTotal, settlementFor } from "@/domain/engine";
 import { formatDate } from "@/domain/format";
@@ -34,7 +36,7 @@ export function HomePage() {
 
       {isError ? (
         <EmptyState
-          emoji="⚠️"
+          icon={<Caution theme="multi-color" size={40} />}
           title="Não deu para carregar seus rolês"
           description={(error as Error)?.message ?? "Verifique sua conexão e tente novamente."}
           action={
@@ -55,7 +57,7 @@ export function HomePage() {
         </div>
       ) : !parties || parties.length === 0 ? (
         <EmptyState
-          emoji="🎈"
+          icon={<PartyBalloon theme="multi-color" size={40} />}
           title="Nenhum rolê por aqui ainda"
           description="Crie o primeiro rolê e comece a somar as despesas com a galera."
           action={
@@ -72,6 +74,7 @@ export function HomePage() {
           {parties.map((party, index) => {
             const total = partyTotal(party);
             const { transfers } = settlementFor(party);
+            const PartyIcon = resolveIcon(party.emoji);
             return (
               <li key={party.id}>
                 <Link
@@ -81,8 +84,8 @@ export function HomePage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <span aria-hidden="true" className="text-2xl">
-                        {party.emoji}
+                      <span aria-hidden="true">
+                        <PartyIcon theme="multi-color" size={28} />
                       </span>
                       <div>
                         <p className="font-bold">{party.name}</p>
@@ -98,7 +101,7 @@ export function HomePage() {
                       ))}
                     </div>
                     <span
-                      className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
                       style={{
                         backgroundColor:
                           transfers.length === 0 ? "var(--positive-soft)" : "var(--muted)",
@@ -106,11 +109,15 @@ export function HomePage() {
                           transfers.length === 0 ? "var(--positive)" : "var(--muted-foreground)",
                       }}
                     >
-                      {party.expenses.length === 0
-                        ? "Sem despesas"
-                        : transfers.length === 0
-                          ? "✓ Acertado"
-                          : `${transfers.length} acerto${transfers.length > 1 ? "s" : ""} pendente${transfers.length > 1 ? "s" : ""}`}
+                      {party.expenses.length === 0 ? (
+                        "Sem despesas"
+                      ) : transfers.length === 0 ? (
+                        <>
+                          <Success theme="multi-color" size={14} /> Acertado
+                        </>
+                      ) : (
+                        `${transfers.length} acerto${transfers.length > 1 ? "s" : ""} pendente${transfers.length > 1 ? "s" : ""}`
+                      )}
                     </span>
                   </div>
                 </Link>

@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { Check, AlertTriangle } from "lucide-react";
+import { Caution } from "@icon-park/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatCents, parseAmount } from "@/domain/format";
 import { splitTotal } from "@/domain/engine";
 import type { CustomMode, Expense, Participant, SplitType } from "@/domain/types";
 import { ParticipantAvatar, ParticipantChip } from "./ParticipantAvatar";
-
-const EMOJIS = ["🧾", "🍝", "🍻", "🚕", "🎬", "🏖️", "🛒", "🥩", "☕", "🎁", "⛽", "🏨"];
+import { IconPicker } from "./IconPicker";
 
 const SPLITS: { id: SplitType; label: string; hint: string }[] = [
   { id: "equal", label: "Igual", hint: "Todo mundo paga a mesma coisa" },
@@ -137,18 +137,11 @@ export function ExpenseEditor({
 
         <div className="space-y-6 px-5 py-5">
           <div className="flex gap-2">
-            <select
-              aria-label="Ícone da despesa"
+            <IconPicker
+              label="Ícone da despesa"
               value={draft.emoji}
-              onChange={(e) => patch({ emoji: e.target.value })}
-              className="rounded-2xl border border-input bg-card px-3 text-xl"
-            >
-              {EMOJIS.map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}
-            </select>
+              onChange={(emoji) => patch({ emoji })}
+            />
             <input
               aria-label="Descrição da despesa"
               autoFocus
@@ -380,7 +373,9 @@ export function ExpenseEditor({
           {touched && errors.length > 0 ? (
             <ul className="space-y-1 text-sm text-destructive">
               {errors.map((error) => (
-                <li key={error}>⚠️ {error}</li>
+                <li key={error} className="flex items-center gap-1.5">
+                  <Caution theme="multi-color" size={16} /> {error}
+                </li>
               ))}
             </ul>
           ) : null}

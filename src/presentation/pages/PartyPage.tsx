@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, MessageCircle, Plus, RefreshCw, Trash2, PartyPopper } from "lucide-react";
+import { Caution, Ghost, Peoples, Bill } from "@icon-park/react";
 import {
   AppShell,
   EmptyState,
@@ -15,6 +16,7 @@ import { ExpenseEditor } from "@/presentation/components/ExpenseEditor";
 import { PeoplePicker } from "@/presentation/components/PeoplePicker";
 import { WhatsAppShareModal } from "@/presentation/components/WhatsAppShareModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { resolveIcon } from "@/presentation/icons/registry";
 import { useDeleteParty, useParty } from "@/hooks/queries";
 import { newExpense } from "@/domain/factories";
 import { partyTotal, settlementFor } from "@/domain/engine";
@@ -37,7 +39,7 @@ export function PartyPage() {
     return (
       <AppShell>
         <EmptyState
-          emoji="⚠️"
+          icon={<Caution theme="multi-color" size={40} />}
           title="Não deu para carregar esse rolê"
           description={(error as Error)?.message ?? "Verifique sua conexão e tente novamente."}
           action={
@@ -66,7 +68,7 @@ export function PartyPage() {
     return (
       <AppShell>
         <EmptyState
-          emoji="🕵️"
+          icon={<Ghost theme="multi-color" size={40} />}
           title="Rolê não encontrado"
           description="Ele pode ter sido excluído ou o link está incorreto."
           action={
@@ -82,6 +84,7 @@ export function PartyPage() {
     );
   }
 
+  const PartyIcon = resolveIcon(party.emoji);
   const total = partyTotal(party);
   const { balances, transfers } = settlementFor(party);
   const balanceOf = (pid: string) => balances.find((b) => b.participantId === pid);
@@ -147,13 +150,13 @@ export function PartyPage() {
 
       {party.participants.length === 0 ? (
         <EmptyState
-          emoji="👥"
+          icon={<Peoples theme="multi-color" size={40} />}
           title="Adicione as pessoas primeiro"
           description="Depois de listar quem está no rolê, você pode lançar as despesas."
         />
       ) : party.expenses.length === 0 ? (
         <EmptyState
-          emoji="🧾"
+          icon={<Bill theme="multi-color" size={40} />}
           title="Nenhuma despesa ainda"
           description="Lance a primeira conta e diga quem pagou e quem consumiu o quê."
           action={
@@ -246,8 +249,8 @@ export function PartyPage() {
 
       <header className="animate-rise mb-8 flex flex-wrap items-end justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span aria-hidden="true" className="text-4xl">
-            {party.emoji}
+          <span aria-hidden="true">
+            <PartyIcon theme="multi-color" size={44} />
           </span>
           <div>
             <h1 className="text-3xl font-extrabold sm:text-4xl">{party.name}</h1>

@@ -11,7 +11,7 @@ export function sampleParty(): Party {
   return {
     id: "exemplo",
     name: "Shopping",
-    emoji: "🍝",
+    emoji: "noodles",
     date: new Date().toISOString().slice(0, 10),
     participants: [paula, mel, jess],
     createdAt: now,
@@ -20,7 +20,7 @@ export function sampleParty(): Party {
       {
         id: "restaurante",
         description: "Restaurante do shopping",
-        emoji: "🍝",
+        emoji: "noodles",
         totalAmount: 9000,
         paidBy: paula.id,
         splitType: "custom",

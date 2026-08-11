@@ -166,21 +166,19 @@ export function Money({
 }
 
 export function EmptyState({
-  emoji,
+  icon,
   title,
   description,
   action,
 }: {
-  emoji: string;
+  icon: ReactNode;
   title: string;
   description: string;
   action?: ReactNode | undefined;
 }) {
   return (
     <div className="card-surface flex flex-col items-center gap-3 px-6 py-12 text-center">
-      <span aria-hidden="true" className="text-4xl">
-        {emoji}
-      </span>
+      <span aria-hidden="true">{icon}</span>
       <h3 className="text-lg font-bold">{title}</h3>
       <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
       {action}

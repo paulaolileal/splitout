@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, MessageCircle, RefreshCw } from "lucide-react";
+import { Caution, Ghost } from "@icon-park/react";
 import { cn } from "@/lib/utils";
 import { AppShell, EmptyState } from "@/presentation/components/primitives";
 import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
@@ -27,7 +28,7 @@ export function ParticipantReportPage() {
     return (
       <AppShell>
         <EmptyState
-          emoji="⚠️"
+          icon={<Caution theme="multi-color" size={40} />}
           title="Não deu para carregar esse acerto"
           description={(error as Error)?.message ?? "Verifique sua conexão e tente novamente."}
           action={
@@ -58,7 +59,7 @@ export function ParticipantReportPage() {
     return (
       <AppShell>
         <EmptyState
-          emoji="🕵️"
+          icon={<Ghost theme="multi-color" size={40} />}
           title="Acerto não encontrado"
           description="Não encontramos esse participante neste rolê."
           action={

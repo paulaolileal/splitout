@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { AppShell } from "@/presentation/components/primitives";
+import { IconPicker } from "@/presentation/components/IconPicker";
+import { DEFAULT_PARTY_ICON_KEY } from "@/presentation/icons/registry";
 import { useCreateParty } from "@/hooks/queries";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
-const EMOJIS = ["🍝", "🍻", "🏖️", "🎬", "🥩", "🛒", "🚕", "☕", "🎉", "🏨"];
 const SUGGESTIONS = ["Shopping", "Sexta no bar", "Churrasco", "Jantar", "Cinema", "Viagem"];
 
 export function NewPartyPage() {
@@ -13,7 +14,7 @@ export function NewPartyPage() {
   const navigate = useNavigate();
   const createParty = useCreateParty();
   const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("🍝");
+  const [emoji, setEmoji] = useState(DEFAULT_PARTY_ICON_KEY);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
   const submit = async (event: React.FormEvent) => {
@@ -36,18 +37,7 @@ export function NewPartyPage() {
         <h1 className="text-3xl font-extrabold sm:text-4xl">Qual é o rolê?</h1>
 
         <div className="flex gap-2">
-          <select
-            aria-label="Ícone do rolê"
-            value={emoji}
-            onChange={(e) => setEmoji(e.target.value)}
-            className="rounded-2xl border border-input bg-card px-3 text-2xl"
-          >
-            {EMOJIS.map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </select>
+          <IconPicker label="Ícone do rolê" value={emoji} onChange={setEmoji} />
           <input
             autoFocus
             aria-label="Nome do rolê"

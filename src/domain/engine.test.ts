@@ -9,13 +9,14 @@ import {
   splitTotal,
 } from "./engine";
 import { sampleParty } from "./sample";
+import { DEFAULT_EXPENSE_ICON_KEY, DEFAULT_PARTY_ICON_KEY } from "./icons";
 import type { Expense, Party } from "./types";
 
 function baseExpense(overrides: Partial<Expense> = {}): Expense {
   return {
     id: "e1",
     description: "Despesa",
-    emoji: "🧾",
+    emoji: DEFAULT_EXPENSE_ICON_KEY,
     totalAmount: 0,
     paidBy: "a",
     splitType: "equal",
@@ -134,7 +135,7 @@ describe("computeBalances", () => {
     const party: Party = {
       id: "p1",
       name: "Rolê",
-      emoji: "🎉",
+      emoji: DEFAULT_PARTY_ICON_KEY,
       date: "2026-01-01",
       createdAt: 0,
       updatedAt: 0,
@@ -177,7 +178,7 @@ describe("settle", () => {
     return {
       id: "p1",
       name: "Rolê",
-      emoji: "🎉",
+      emoji: DEFAULT_PARTY_ICON_KEY,
       date: "2026-01-01",
       createdAt: 0,
       updatedAt: 0,
