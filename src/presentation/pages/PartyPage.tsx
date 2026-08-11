@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, MessageCircle, Plus, RefreshCw, Trash2, PartyPopper } from "lucide-react";
+import {
+  ArrowLeft,
+  MessageCircle,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  PartyPopper,
+} from "lucide-react";
 import { Caution, Ghost, Peoples, Bill } from "@icon-park/react";
 import {
   AppShell,
@@ -13,6 +21,7 @@ import {
 import { ParticipantChip } from "@/presentation/components/ParticipantAvatar";
 import { BalanceCard, ExpenseCard, SettlementCard } from "@/presentation/components/cards";
 import { ExpenseEditor } from "@/presentation/components/ExpenseEditor";
+import { PartyEditor } from "@/presentation/components/PartyEditor";
 import { PeoplePicker } from "@/presentation/components/PeoplePicker";
 import { WhatsAppShareModal } from "@/presentation/components/WhatsAppShareModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +39,7 @@ export function PartyPage() {
   const { party, isLoading, isError, error, refetch, update } = useParty(id);
   const deleteParty = useDeleteParty();
   const [editing, setEditing] = useState<Expense | null>(null);
+  const [editingParty, setEditingParty] = useState(false);
   const [waGroupOpen, setWaGroupOpen] = useState(false);
   const dockFabAboveFooter = useFooterProximity();
 
@@ -100,6 +110,11 @@ export function PartyPage() {
       participants: draft.participants.filter((p) => p.id !== pid),
       expenses: draft.expenses.filter((e) => e.paidBy !== pid),
     }));
+
+  const savePartyMeta = (values: { name: string; emoji: string; date: string }) => {
+    update((draft) => ({ ...draft, ...values }));
+    setEditingParty(false);
+  };
 
   const saveExpense = (expense: Expense) => {
     update((draft) => {
@@ -252,7 +267,17 @@ export function PartyPage() {
             <AppIcon iconKey={party.emoji} size={44} />
           </span>
           <div>
-            <h1 className="text-3xl font-extrabold sm:text-4xl">{party.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-extrabold sm:text-4xl">{party.name}</h1>
+              <button
+                type="button"
+                aria-label="Editar rolê"
+                onClick={() => setEditingParty(true)}
+                className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Pencil aria-hidden="true" className="size-4" />
+              </button>
+            </div>
             <p className="text-sm text-muted-foreground">
               {formatDate(party.date)} · {party.participants.length} pessoa
               {party.participants.length === 1 ? "" : "s"} · {party.expenses.length} despesa
@@ -381,6 +406,13 @@ export function PartyPage() {
       />
 
       <WhatsAppShareModal open={waGroupOpen} party={party} onClose={() => setWaGroupOpen(false)} />
+
+      <PartyEditor
+        open={editingParty}
+        party={party}
+        onClose={() => setEditingParty(false)}
+        onSave={savePartyMeta}
+      />
     </AppShell>
   );
 }
