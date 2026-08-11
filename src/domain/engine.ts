@@ -92,36 +92,60 @@ export function computeBalances(party: Party): Balance[] {
 }
 
 /**
- * Greedy settlement: repeatedly match the biggest debtor with the biggest
- * creditor. Produces a small, human-friendly set of transfers.
+ * Direct pairwise debts derived straight from each expense's allocation —
+ * "who owes whom, and for what" — before any netting. Debts are aggregated
+ * across every expense that shares the same (debtor, creditor) pair.
  */
-export function settle(balances: Balance[]): Transfer[] {
-  const debtors = balances
-    .filter((b) => b.balance < 0)
-    .map((b) => ({ id: b.participantId, amount: -b.balance }))
-    .sort((a, b) => b.amount - a.amount);
-  const creditors = balances
-    .filter((b) => b.balance > 0)
-    .map((b) => ({ id: b.participantId, amount: b.balance }))
-    .sort((a, b) => b.amount - a.amount);
-
-  const transfers: Transfer[] = [];
-  let i = 0;
-  let j = 0;
-  while (i < debtors.length && j < creditors.length) {
-    const d = debtors[i]!;
-    const c = creditors[j]!;
-    const amount = Math.min(d.amount, c.amount);
-    if (amount > 0) transfers.push({ from: d.id, to: c.id, amount });
-    d.amount -= amount;
-    c.amount -= amount;
-    if (d.amount === 0) i++;
-    if (c.amount === 0) j++;
+function pairwiseDebts(party: Party): Map<string, Map<string, number>> {
+  const debts = new Map<string, Map<string, number>>();
+  const add = (from: string, to: string, amount: number) => {
+    if (from === to || amount <= 0) return;
+    const owedToOthers = debts.get(from) ?? new Map<string, number>();
+    owedToOthers.set(to, (owedToOthers.get(to) ?? 0) + amount);
+    debts.set(from, owedToOthers);
+  };
+  for (const e of party.expenses) {
+    const alloc = allocateExpense(e);
+    for (const [participantId, amount] of Object.entries(alloc)) {
+      add(participantId, e.paidBy, amount);
+    }
   }
+  return debts;
+}
+
+/**
+ * Settles each pair of participants independently — nets debts only between
+ * the *same* two people (e.g. "Mel owes Paula 10" and "Paula owes Mel 4"
+ * collapse into a single "Mel owes Paula 6" transfer), and never routes a
+ * debt through an unrelated third person the way a global min-transfer
+ * matching (biggest debtor vs. biggest creditor by net balance) would.
+ *
+ * That global approach produces a technically balanced result but can tell
+ * someone to pay a person they never split an expense with — every transfer
+ * here stays traceable back to the expenses that produced it.
+ */
+export function settle(party: Party): Transfer[] {
+  const debts = pairwiseDebts(party);
+  const transfers: Transfer[] = [];
+  const settledPairs = new Set<string>();
+
+  for (const [from, owedToOthers] of debts) {
+    for (const to of owedToOthers.keys()) {
+      const pairKey = [from, to].sort().join("::");
+      if (settledPairs.has(pairKey)) continue;
+      settledPairs.add(pairKey);
+
+      const forward = debts.get(from)?.get(to) ?? 0;
+      const backward = debts.get(to)?.get(from) ?? 0;
+      const net = forward - backward;
+      if (net > 0) transfers.push({ from, to, amount: net });
+      else if (net < 0) transfers.push({ from: to, to: from, amount: -net });
+    }
+  }
+
   return transfers;
 }
 
 export function settlementFor(party: Party) {
-  const balances = computeBalances(party);
-  return { balances, transfers: settle(balances) };
+  return { balances: computeBalances(party), transfers: settle(party) };
 }

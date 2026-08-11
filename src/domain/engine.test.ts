@@ -173,30 +173,95 @@ describe("computeBalances", () => {
 });
 
 describe("settle", () => {
+  function party(participantIds: string[], expenses: Expense[]): Party {
+    return {
+      id: "p1",
+      name: "Rolê",
+      emoji: "🎉",
+      date: "2026-01-01",
+      createdAt: 0,
+      updatedAt: 0,
+      participants: participantIds.map((id) => ({ id, name: id })),
+      expenses,
+    };
+  }
+
   it("produces no transfers when everyone is already even", () => {
-    expect(
-      settle([
-        { participantId: "a", paid: 50, owed: 50, balance: 0 },
-        { participantId: "b", paid: 50, owed: 50, balance: 0 },
-      ]),
-    ).toEqual([]);
+    const p = party(
+      ["a", "b"],
+      [baseExpense({ totalAmount: 100, paidBy: "a", sharedWith: ["a", "b"] })],
+    );
+    // a paid 100 and owes 50 for the shared expense -> only b owes a.
+    expect(settle(p)).toEqual([{ from: "b", to: "a", amount: 50 }]);
   });
 
-  it("matches the biggest debtor with the biggest creditor and the transfers close every balance", () => {
-    const balances = [
-      { participantId: "a", paid: 0, owed: 0, balance: -60 },
-      { participantId: "b", paid: 0, owed: 0, balance: -10 },
-      { participantId: "c", paid: 0, owed: 0, balance: 70 },
-    ];
-    const transfers = settle(balances);
-    const net: Record<string, number> = { a: 0, b: 0, c: 0 };
-    for (const t of transfers) {
-      net[t.from] = (net[t.from] ?? 0) - t.amount;
-      net[t.to] = (net[t.to] ?? 0) + t.amount;
-    }
-    for (const b of balances) expect(net[b.participantId]).toBe(b.balance);
-    // Greedy matching should settle 2 debtors against 1 creditor in 2 transfers, not more.
-    expect(transfers.length).toBe(2);
+  it("nets reciprocal debts between the same two people into a single transfer", () => {
+    const p = party(
+      ["a", "b"],
+      [
+        baseExpense({ id: "e1", totalAmount: 100, paidBy: "a", sharedWith: ["a", "b"] }),
+        baseExpense({ id: "e2", totalAmount: 40, paidBy: "b", sharedWith: ["a", "b"] }),
+      ],
+    );
+    // b owes a 50 (half of e1); a owes b 20 (half of e2) -> nets to b owes a 30.
+    expect(settle(p)).toEqual([{ from: "b", to: "a", amount: 30 }]);
+  });
+
+  it("never routes a debt through someone who didn't share the expense (reported bug)", () => {
+    // Amounts in cents. Paula paid 30,00 on something only she consumed,
+    // 25,00 on something only Mel consumed, and 40,00 on something only Jess
+    // consumed. Jess paid 10,00 and 100,00 on two things split equally among
+    // Jess, Mel, Arthur and Paula.
+    const p = party(
+      ["paula", "mel", "jess", "arthur"],
+      [
+        baseExpense({
+          id: "macarrao",
+          totalAmount: 3000,
+          paidBy: "paula",
+          splitType: "exclusive",
+          sharedWith: ["paula"],
+        }),
+        baseExpense({
+          id: "fricasse",
+          totalAmount: 2500,
+          paidBy: "paula",
+          splitType: "exclusive",
+          sharedWith: ["mel"],
+        }),
+        baseExpense({
+          id: "lanche",
+          totalAmount: 4000,
+          paidBy: "paula",
+          splitType: "exclusive",
+          sharedWith: ["jess"],
+        }),
+        baseExpense({
+          id: "coca",
+          totalAmount: 1000,
+          paidBy: "jess",
+          sharedWith: ["jess", "mel", "arthur", "paula"],
+        }),
+        baseExpense({
+          id: "cinema",
+          totalAmount: 10000,
+          paidBy: "jess",
+          sharedWith: ["jess", "mel", "arthur", "paula"],
+        }),
+      ],
+    );
+    const transfers = settle(p);
+    // Arthur never shared anything Paula paid for, so he must never owe her.
+    expect(transfers.find((t) => t.from === "arthur" && t.to === "paula")).toBeUndefined();
+    expect(transfers).toEqual(
+      expect.arrayContaining([
+        { from: "mel", to: "paula", amount: 2500 },
+        { from: "mel", to: "jess", amount: 2750 },
+        { from: "arthur", to: "jess", amount: 2750 },
+        { from: "jess", to: "paula", amount: 1250 },
+      ]),
+    );
+    expect(transfers.length).toBe(4);
   });
 });
 
