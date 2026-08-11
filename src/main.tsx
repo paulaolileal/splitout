@@ -8,8 +8,9 @@ import { registerSW } from "virtual:pwa-register";
 import { App } from "./presentation/App";
 import { ErrorBoundary } from "./presentation/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
-import { GoogleAuthError } from "@/infrastructure/google/googleApiFetch";
+import { GoogleAuthError, GoogleQuotaError } from "@/infrastructure/google/googleApiFetch";
 import { showReconnectToast } from "@/lib/googleAuthToast";
+import { showQuotaExceededToast } from "@/lib/googleQuotaToast";
 import { initAuthScheduler } from "@/services/googleAuth";
 import "./styles.css";
 
@@ -18,10 +19,21 @@ initAuthScheduler();
 
 const TEN_MINUTES = 10 * 60 * 1000;
 
-/** Surfaces session-expiry consistently across every query and mutation, regardless
- *  of whether the call site wires its own `onError` — see `showReconnectToast`. */
-function handleAuthError(error: unknown) {
+/** Surfaces Google API errors consistently across every query and mutation,
+ *  regardless of whether the call site wires its own `onError` — dispatches
+ *  to the matching toast (`showReconnectToast`/`showQuotaExceededToast`). */
+function handleGoogleApiError(error: unknown) {
   if (error instanceof GoogleAuthError) showReconnectToast();
+  else if (error instanceof GoogleQuotaError) showQuotaExceededToast();
+}
+
+/** Neither a session-expiry nor a rate-quota error improves on an immediate
+ *  retry, so both skip React Query's default retry — retrying them just
+ *  doubles the read volume right when the quota is already exceeded. Any
+ *  other (presumably transient) error still gets one retry. */
+function shouldRetry(failureCount: number, error: unknown) {
+  if (error instanceof GoogleAuthError || error instanceof GoogleQuotaError) return false;
+  return failureCount < 1;
 }
 
 const queryClient = new QueryClient({
@@ -30,11 +42,11 @@ const queryClient = new QueryClient({
       staleTime: 2 * 60 * 1000,
       gcTime: TEN_MINUTES,
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: shouldRetry,
     },
   },
-  queryCache: new QueryCache({ onError: handleAuthError }),
-  mutationCache: new MutationCache({ onError: handleAuthError }),
+  queryCache: new QueryCache({ onError: handleGoogleApiError }),
+  mutationCache: new MutationCache({ onError: handleGoogleApiError }),
 });
 
 const persister = createSyncStoragePersister({

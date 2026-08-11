@@ -15,6 +15,22 @@ export class GoogleAuthError extends Error {
 }
 
 /**
+ * Thrown on an HTTP 429 from the Sheets/Drive REST API — the per-user rate
+ * quota (e.g. "Read requests per minute per user") was exceeded. Retrying
+ * immediately never helps (see the `retry` function in `main.tsx`, which
+ * skips retrying this error); the UI layer catches it to show a friendly
+ * "wait a bit" toast instead of the raw Google error body.
+ */
+export class GoogleQuotaError extends Error {
+  constructor(
+    message = "Muitas requisições ao Google Sheets em pouco tempo. Aguarde cerca de 1 minuto e tente de novo.",
+  ) {
+    super(message);
+    this.name = "GoogleQuotaError";
+  }
+}
+
+/**
  * Shared fetch wrapper for the Sheets/Drive REST APIs. Ensures a fresh token
  * before every call (silently renewing in the background if needed), and on
  * an HTTP 401 attempts one forced silent refresh + retry before giving up.
@@ -51,6 +67,7 @@ async function doFetch<T>(
 
   if (!res.ok) {
     if (res.status === 401) throw new GoogleAuthError();
+    if (res.status === 429) throw new GoogleQuotaError();
     const body = await res.text();
     throw new Error(`${apiLabel} ${res.status}: ${body}`);
   }

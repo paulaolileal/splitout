@@ -3,8 +3,9 @@
  * (src/domain/repository.ts).
  *
  * Party strategy — "whole-table overwrite": every read fetches all six party
- * tabs in parallel and reassembles the full `Party[]` graph in memory; every
- * write (`saveParty`/`deleteParty`) reassembles that same `Party[]` graph
+ * tabs in one `values:batchGet` call and reassembles the full `Party[]`
+ * graph in memory; every write (`saveParty`/`deleteParty`) reassembles that
+ * same `Party[]` graph
  * with the mutation applied, then rewrites the six tabs from scratch
  * (`values:batchClear` followed by `values:batchUpdate`).
  *
@@ -155,21 +156,32 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
 
   // ---- read ---------------------------------------------------------
 
-  /** Reads a single tab's raw cells via `values.get`. One HTTP call per tab,
-   * fired in parallel by `readAllRows` — deliberately *not* a single
-   * `values:batchGet` across all ranges: the Sheets API echoes back
-   * each `ValueRange.range` normalized to the data's actual extent (e.g.
-   * `"parties!A1:F2"`), never the bare sheet name we requested, so matching
-   * the response back to a tab by that string always misses and silently
-   * yields "no rows" for every tab. `values.get` on one range at a time
-   * sidesteps the mismatch entirely — same pattern as sheet-budget's
-   * `GoogleSheetsRepository.getValues`. */
+  /** Reads a single tab's raw cells via `values.get`. Used where only one
+   * range is needed (`readPeopleRows`) — grouping a single range into a
+   * batch would buy nothing. */
   private async getValues(range: string): Promise<string[][]> {
     const data = await this.request<{ values?: string[][] }>(`/values/${range}`);
     return data.values ?? [];
   }
 
+  /** Reads all six party tabs in a single `values:batchGet` call instead of
+   * six separate `values.get` calls — each Sheets API call counts once
+   * against the per-user "read requests per minute" quota, so this is a 6x
+   * reduction on every party read (list, detail, and the read-before-write
+   * inside `saveParty`/`deleteParty`).
+   *
+   * The response's `valueRanges` are matched back to a tab by ARRAY
+   * POSITION, not by the echoed `ValueRange.range` string: the Sheets API
+   * always returns `valueRanges` in the same order as the requested
+   * `ranges` query params, but it normalizes each entry's own `.range`
+   * field to the data's actual extent (e.g. `"parties!A1:F2"` instead of
+   * the bare `"parties"` we asked for) — so matching by that echoed string
+   * is unreliable, while matching by request order is not. */
   private async readAllRows(): Promise<AllRows> {
+    const query = ALL_RANGES.map((range) => `ranges=${encodeURIComponent(range)}`).join("&");
+    const data = await this.request<{ valueRanges?: { values?: string[][] }[] }>(
+      `/values:batchGet?${query}`,
+    );
     const [
       parties = [],
       participants = [],
@@ -177,7 +189,7 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
       sharedWith = [],
       allocations = [],
       percentages = [],
-    ] = await Promise.all(ALL_RANGES.map((range) => this.getValues(range)));
+    ] = (data.valueRanges ?? []).map((vr) => vr.values ?? []);
     return {
       [SHEETS.parties]: rowsToRecords<PartyRow>(parties),
       [SHEETS.participants]: rowsToRecords<ParticipantRow>(participants),
