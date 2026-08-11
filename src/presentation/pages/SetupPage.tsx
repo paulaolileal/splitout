@@ -9,6 +9,7 @@ import { useSpreadsheetStore } from "@/store/spreadsheetStore";
 import { clearSheetProvider } from "@/application/repositoryProvider";
 import { ensureSchema } from "@/application/ensureSchema";
 import { Logo } from "@/presentation/components/primitives";
+import { Footer } from "@/presentation/components/Footer";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const FOLDER_NAME = "LealTEK Apps";
@@ -71,25 +72,28 @@ export function SetupPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground">
-      <div className="flex w-full max-w-xs flex-col items-center gap-6 text-center">
-        <Logo />
-        {error ? (
-          <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </p>
-        ) : (
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 aria-hidden="true" className="size-6 animate-spin text-primary" />
-            <div>
-              <p className="text-sm font-medium">{STEPS[step]}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Conectando ao Google Drive · pasta "{FOLDER_NAME}"
-              </p>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <div className="flex flex-1 items-center justify-center px-4">
+        <div className="flex w-full max-w-xs flex-col items-center gap-6 text-center">
+          <Logo />
+          {error ? (
+            <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </p>
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 aria-hidden="true" className="size-6 animate-spin text-primary" />
+              <div>
+                <p className="text-sm font-medium">{STEPS[step]}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Conectando ao Google Drive · pasta "{FOLDER_NAME}"
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -59,6 +59,7 @@ presentation → hooks → domain ← infrastructure
 | `src/store/themeStore.ts` | Zustand (persisted, `splitout:theme`): `"light" \| "dark" \| "system"` preference, default `"system"` |
 | `src/hooks/useTheme.ts` | Resolves the active theme (preference + OS `prefers-color-scheme`), toggles the `.dark` class on `<html>`, keeps it in sync with live OS changes, and updates `<meta name="theme-color">`. Called once in `App.tsx` |
 | `src/presentation/components/ThemeToggle.tsx` | Header dropdown (Light/Dark/System) rendered inside `AppShell` |
+| `src/presentation/components/Footer.tsx` | Subtle "um produto LealTEK" credit bar rendered at the bottom of `AppShell` (every logged-in screen), plus `SetupPage`/`NotFoundPage`. `LoginPage` renders its own larger `LoginCredit` instead, for a more prominent first-impression credit — see "Branding" below |
 | `src/presentation/components/PeoplePicker.tsx` | Popover+Command picker used when adding a participant to a party — pick a registered person or type an ad-hoc name |
 | `src/presentation/components/PersonEditor.tsx` | Small dialog to create/edit/delete a registered person (name, phone with the `maskPhoneInput` mask, and Pix key) |
 | `src/presentation/components/WhatsAppShareModal.tsx` | Dialog to send a settlement summary via WhatsApp — individual (`participant` set, `wa.me/<phone>`) or group (`participant` absent, `wa.me/?text=...`, no fixed recipient) |
@@ -85,6 +86,23 @@ logic to avoid a light-theme flash. The PWA manifest's `theme_color`/
 `background_color` (`vite.config.ts`) stay light-only — the manifest spec has
 no `prefers-color-scheme` variant, so that only affects the install splash
 screen, not the app itself.
+
+### Branding — LealTEK credit
+
+`public/lealtek-full.png` is the canonical LealTEK wordmark, shared byte-for-byte
+with the sibling LealTEK apps (`meta-board`, `sheet-budget`) — always transparent,
+so it renders correctly in both themes without any filter/invert. Every screen
+shows a credit:
+
+- **`Footer.tsx`** — a subtle, low-emphasis bar (`AppShell`, `SetupPage`,
+  `NotFoundPage`): a small "um produto" label next to the wordmark.
+- **`LoginCredit`** (local to `LoginPage.tsx`) — a larger, full-opacity version
+  used only on the login screen, since that's the app's first impression and
+  the one place worth a stronger LealTEK credit.
+
+Both link to `https://lealtek.com`. Keep new full-page screens (outside
+`AppShell`) consistent by rendering `<Footer />` as the last child of a
+`min-h-screen flex flex-col` wrapper, mirroring `SetupPage`/`NotFoundPage`.
 
 ### Google Sheets schema
 

@@ -74,54 +74,84 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md">
-        <div className="animate-rise card-surface overflow-hidden px-6 py-10 sm:px-10 sm:py-14">
-          <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
-            <Sparkles aria-hidden="true" className="size-3.5" /> sem planilha, sem discussão
-          </span>
-          <h1 className="mt-4 text-4xl leading-[1.05] font-extrabold">
-            Divida o rolê.
-            <br />
-            <span className="text-primary">Acerte as contas.</span>
-          </h1>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Cada pessoa consumiu uma coisa, outra pagou a conta inteira. O Splitout calcula quem
-            paga quanto para quem — tudo salvo direto na sua conta Google.
-          </p>
-
-          <div className="mt-8 space-y-3">
-            {error ? (
-              <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={handleSignIn}
-              disabled={loading}
-              className="inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-primary px-6 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform active:scale-[0.98] disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-              ) : (
-                <GoogleIcon />
-              )}
-              {loading ? (user ? "Reconectando…" : "Entrando…") : "Entrar com Google"}
-            </button>
-            <p className="text-center text-xs text-muted-foreground">
-              Seus rolês ficam salvos numa planilha na pasta "LealTEK Apps" do seu Google Drive.
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md">
+          <div className="animate-rise card-surface overflow-hidden px-6 py-10 sm:px-10 sm:py-14">
+            <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
+              <Sparkles aria-hidden="true" className="size-3.5" /> sem planilha, sem discussão
+            </span>
+            <h1 className="mt-4 text-4xl leading-[1.05] font-extrabold">
+              Divida o rolê.
+              <br />
+              <span className="text-primary">Acerte as contas.</span>
+            </h1>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Cada pessoa consumiu uma coisa, outra pagou a conta inteira. O Splitout calcula quem
+              paga quanto para quem — tudo salvo direto na sua conta Google.
             </p>
-          </div>
-        </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Só quer ver como funciona?{" "}
-          <Link to="/exemplo" className="font-semibold text-foreground underline">
-            Veja um exemplo
-          </Link>
-        </p>
+            <div className="mt-8 space-y-3">
+              {error ? (
+                <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {error}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleSignIn}
+                disabled={loading}
+                className="inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-primary px-6 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform active:scale-[0.98] disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                ) : (
+                  <GoogleIcon />
+                )}
+                {loading ? (user ? "Reconectando…" : "Entrando…") : "Entrar com Google"}
+              </button>
+              <p className="text-center text-xs text-muted-foreground">
+                Seus rolês ficam salvos numa planilha na pasta "LealTEK Apps" do seu Google Drive.
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Só quer ver como funciona?{" "}
+            <Link to="/exemplo" className="font-semibold text-foreground underline">
+              Veja um exemplo
+            </Link>
+          </p>
+        </div>
       </div>
+
+      <LoginCredit />
     </div>
+  );
+}
+
+/**
+ * Prominent, on-brand credit for the app's entry screen — the "destaque"
+ * a first-time visitor sees, as opposed to the subtle `Footer` shown on
+ * every other screen once the user is inside the app.
+ */
+function LoginCredit() {
+  return (
+    <footer className="shrink-0 border-t border-border/60 py-6">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-2 px-4 text-center">
+        <a
+          href="https://lealtek.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Conheça a LealTEK"
+          className="inline-flex flex-col items-center gap-2 transition-opacity hover:opacity-80"
+        >
+          <span className="text-[11px] font-semibold tracking-[0.2em] text-muted-foreground uppercase">
+            Um produto
+          </span>
+          <img src="/lealtek-full.png" alt="LealTEK" className="h-8 object-contain" />
+        </a>
+      </div>
+    </footer>
   );
 }

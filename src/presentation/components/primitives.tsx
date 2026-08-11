@@ -6,6 +6,7 @@ import { formatBRL } from "@/domain/format";
 import { useAuthStore } from "@/store/authStore";
 import { clearAccessToken } from "@/services/googleAuth";
 import { ThemeToggle } from "@/presentation/components/ThemeToggle";
+import { Footer } from "@/presentation/components/Footer";
 
 export function Logo({ className }: { className?: string | undefined }) {
   return (
@@ -82,7 +83,7 @@ export function AppShell({
   action?: ReactNode | undefined;
 }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-4">
           <Logo />
@@ -94,7 +95,8 @@ export function AppShell({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-28">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-28">{children}</main>
+      <Footer />
     </div>
   );
 }
