@@ -17,10 +17,10 @@ export function Footer() {
           title="Conheça a LealTEK"
           className="inline-flex flex-col items-center gap-2 transition-opacity hover:opacity-80"
         >
-          <span className="text-[11px] font-semibold tracking-[0.2em] text-muted-foreground uppercase">
+          <span className="text-[9px] font-semibold tracking-[0.2em] text-muted-foreground uppercase">
             Um produto
           </span>
-          <img src="/lealtek-full.png" alt="LealTEK" className="h-10 object-contain" />
+          <img src="/lealtek-full.png" alt="LealTEK" className="h-16 object-contain" />
         </a>
         <p className="text-xs text-muted-foreground">
           © {year} Splitout! Todos os direitos reservados.
