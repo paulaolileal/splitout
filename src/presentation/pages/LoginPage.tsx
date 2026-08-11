@@ -5,6 +5,7 @@ import { signIn, silentSignIn, getAccessToken } from "@/services/googleAuth";
 import { useAuthStore } from "@/store/authStore";
 import { useSpreadsheetStore } from "@/store/spreadsheetStore";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { Footer } from "@/presentation/components/Footer";
 
 function GoogleIcon() {
   return (
@@ -125,33 +126,7 @@ export function LoginPage() {
         </div>
       </div>
 
-      <LoginCredit />
+      <Footer />
     </div>
-  );
-}
-
-/**
- * Prominent, on-brand credit for the app's entry screen — the "destaque"
- * a first-time visitor sees, as opposed to the subtle `Footer` shown on
- * every other screen once the user is inside the app.
- */
-function LoginCredit() {
-  return (
-    <footer className="shrink-0 border-t border-border/60 py-6">
-      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-2 px-4 text-center">
-        <a
-          href="https://lealtek.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Conheça a LealTEK"
-          className="inline-flex flex-col items-center gap-2 transition-opacity hover:opacity-80"
-        >
-          <span className="text-[11px] font-semibold tracking-[0.2em] text-muted-foreground uppercase">
-            Um produto
-          </span>
-          <img src="/lealtek-full.png" alt="LealTEK" className="h-8 object-contain" />
-        </a>
-      </div>
-    </footer>
   );
 }

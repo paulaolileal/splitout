@@ -7,25 +7,9 @@ import { useAuthStore } from "@/store/authStore";
 import { clearAccessToken } from "@/services/googleAuth";
 import { ThemeToggle } from "@/presentation/components/ThemeToggle";
 import { Footer } from "@/presentation/components/Footer";
+import { Logo } from "@/presentation/components/Logo";
 
-export function Logo({ className }: { className?: string | undefined }) {
-  return (
-    <Link
-      to="/"
-      className={cn(
-        "inline-flex items-center gap-2 font-display text-lg font-extrabold tracking-tight",
-        className,
-      )}
-    >
-      <span className="grid size-8 place-items-center rounded-xl bg-primary text-primary-foreground shadow-pop">
-        <span aria-hidden="true" className="text-sm font-black">
-          S
-        </span>
-      </span>
-      <span>Splitout!</span>
-    </Link>
-  );
-}
+export { Logo };
 
 function UserMenu() {
   const user = useAuthStore((s) => s.user);
