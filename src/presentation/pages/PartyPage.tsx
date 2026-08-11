@@ -10,14 +10,7 @@ import {
   PartyPopper,
 } from "lucide-react";
 import { Caution, Ghost, Peoples, Bill } from "@icon-park/react";
-import {
-  AppShell,
-  EmptyState,
-  Money,
-  SectionTitle,
-  fabPositionClassName,
-  useFooterProximity,
-} from "@/presentation/components/primitives";
+import { AppShell, EmptyState, Money, SectionTitle } from "@/presentation/components/primitives";
 import { ParticipantChip } from "@/presentation/components/ParticipantAvatar";
 import { BalanceCard, ExpenseCard, SettlementCard } from "@/presentation/components/cards";
 import { ExpenseEditor } from "@/presentation/components/ExpenseEditor";
@@ -41,7 +34,6 @@ export function PartyPage() {
   const [editing, setEditing] = useState<Expense | null>(null);
   const [editingParty, setEditingParty] = useState(false);
   const [waGroupOpen, setWaGroupOpen] = useState(false);
-  const dockFabAboveFooter = useFooterProximity();
 
   useDocumentTitle(party ? `${party.name} — Splitout!` : "Seu rolê — Splitout!");
 
@@ -372,23 +364,6 @@ export function PartyPage() {
           </section>
         )}
       </div>
-
-      {party.participants.length > 0 ? (
-        <button
-          type="button"
-          onClick={() =>
-            setEditing(
-              newExpense(
-                party.participants[0]!.id,
-                party.participants.map((p) => p.id),
-              ),
-            )
-          }
-          className={`${fabPositionClassName(dockFabAboveFooter, "lg")} inline-flex items-center gap-2 rounded-full bg-primary px-5 py-4 font-bold text-primary-foreground shadow-pop`}
-        >
-          <Plus aria-hidden="true" className="size-5" /> Despesa
-        </button>
-      ) : null}
 
       <ExpenseEditor
         open={editing !== null}

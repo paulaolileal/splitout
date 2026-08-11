@@ -2,14 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CheckSquare, Plus, RefreshCw, X } from "lucide-react";
 import { Caution, PartyBalloon, Success } from "@icon-park/react";
-import {
-  AppShell,
-  EmptyState,
-  Money,
-  SectionTitle,
-  fabPositionClassName,
-  useFooterProximity,
-} from "@/presentation/components/primitives";
+import { AppShell, EmptyState, Money, SectionTitle } from "@/presentation/components/primitives";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
 import { AppIcon } from "@/presentation/icons/registry";
@@ -22,7 +15,6 @@ export function HomePage() {
   useDocumentTitle("Seus rolês — Splitout!");
   const navigate = useNavigate();
   const { data: parties, isLoading, isError, error, refetch } = useParties();
-  const dockFabAboveFooter = useFooterProximity();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -75,7 +67,7 @@ export function HomePage() {
               ) : null}
               <Link
                 to="/role/novo"
-                className="hidden items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-pop sm:inline-flex"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-pop"
               >
                 <Plus aria-hidden="true" className="size-4" /> Novo rolê
               </Link>
@@ -230,15 +222,7 @@ export function HomePage() {
             </button>
           </div>
         </div>
-      ) : (
-        <Link
-          to="/role/novo"
-          aria-label="Novo rolê"
-          className={`${fabPositionClassName(dockFabAboveFooter, "sm")} inline-flex items-center gap-2 rounded-full bg-primary px-5 py-4 font-bold text-primary-foreground shadow-pop`}
-        >
-          <Plus aria-hidden="true" className="size-5" /> Novo rolê
-        </Link>
-      )}
+      ) : null}
     </AppShell>
   );
 }

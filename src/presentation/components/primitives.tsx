@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { LogOut, Monitor, Moon, Sun, User as UserIcon, Users } from "lucide-react";
 import {
@@ -24,34 +24,6 @@ import { Footer } from "@/presentation/components/Footer";
 import { Logo } from "@/presentation/components/Logo";
 
 export { Logo };
-
-/**
- * Whether the footer is close enough to the viewport that a mobile FAB
- * (fixed to the viewport bottom) would overlap it. Fed by an
- * IntersectionObserver on a sentinel placed right before the footer in
- * `AppShell`, and read by `fabPositionClassName` to dock the FAB above the
- * footer instead of floating over it.
- */
-const FooterProximityContext = createContext(false);
-
-/**
- * Returns the position classes for a mobile floating action button: pinned
- * to the viewport (`fixed`) during normal scrolling, switching to `absolute`
- * — anchored to the bottom-right of `AppShell`'s `<main>`, right above the
- * footer — once the footer comes near. `hiddenFrom` mirrors the breakpoint
- * at which the FAB is replaced by an inline button elsewhere in the header.
- */
-export function fabPositionClassName(dockAboveFooter: boolean, hiddenFrom: "sm" | "lg") {
-  return cn(
-    dockAboveFooter ? "absolute" : "fixed",
-    "right-5 bottom-6 z-30",
-    hiddenFrom === "sm" ? "sm:hidden" : "lg:hidden",
-  );
-}
-
-export function useFooterProximity() {
-  return useContext(FooterProximityContext);
-}
 
 const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Claro", icon: Sun },
@@ -151,19 +123,6 @@ export function AppShell({
   children: ReactNode;
   action?: ReactNode | undefined;
 }) {
-  const footerSentinelRef = useRef<HTMLDivElement>(null);
-  const [footerNear, setFooterNear] = useState(false);
-
-  useEffect(() => {
-    const sentinel = footerSentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(([entry]) =>
-      setFooterNear(entry?.isIntersecting ?? false),
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -176,12 +135,7 @@ export function AppShell({
           </div>
         </div>
       </header>
-      <main className="relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-28">
-        <FooterProximityContext.Provider value={footerNear}>
-          {children}
-        </FooterProximityContext.Provider>
-      </main>
-      <div ref={footerSentinelRef} aria-hidden="true" />
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-6">{children}</main>
       <Footer />
     </div>
   );
