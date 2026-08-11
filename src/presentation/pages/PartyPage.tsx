@@ -10,6 +10,7 @@ import {
   PartyPopper,
 } from "lucide-react";
 import { Caution, Ghost, Peoples, Bill } from "@icon-park/react";
+import { toast } from "sonner";
 import { AppShell, EmptyState, Money, SectionTitle } from "@/presentation/components/primitives";
 import { ParticipantChip } from "@/presentation/components/ParticipantAvatar";
 import { BalanceCard, ExpenseCard, SettlementCard } from "@/presentation/components/cards";
@@ -96,12 +97,27 @@ export function PartyPage() {
     update((draft) => ({ ...draft, participants: [...draft.participants, participant] }));
   };
 
-  const removeParticipant = (pid: string) =>
+  const isAssignedToExpense = (pid: string) =>
+    party.expenses.some(
+      (e) =>
+        e.paidBy === pid ||
+        e.sharedWith.includes(pid) ||
+        e.allocations.some((a) => a.participantId === pid) ||
+        e.percentages.some((p) => p.participantId === pid),
+    );
+
+  const removeParticipant = (pid: string) => {
+    if (isAssignedToExpense(pid)) {
+      toast.error("Não é possível remover essa pessoa", {
+        description: "Ela precisa estar sem despesas atribuídas para ser removida.",
+      });
+      return;
+    }
     update((draft) => ({
       ...draft,
       participants: draft.participants.filter((p) => p.id !== pid),
-      expenses: draft.expenses.filter((e) => e.paidBy !== pid),
     }));
+  };
 
   const savePartyMeta = (values: { name: string; emoji: string; date: string }) => {
     update((draft) => ({ ...draft, ...values }));
@@ -135,6 +151,7 @@ export function PartyPage() {
             party.participants.length > 0 ? (
               <button
                 type="button"
+                title="Adicionar despesa"
                 onClick={() =>
                   setEditing(
                     newExpense(
@@ -145,7 +162,8 @@ export function PartyPage() {
                 }
                 className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
               >
-                <Plus aria-hidden="true" className="size-3.5" /> Adicionar despesa
+                <Plus aria-hidden="true" className="size-3.5" />
+                <span className="hidden sm:inline">Adicionar despesa</span>
               </button>
             ) : null
           }
@@ -294,7 +312,14 @@ export function PartyPage() {
       <div className="grid gap-8 lg:grid-cols-[320px_1fr] lg:items-stretch">
         <section aria-labelledby="participantes" className="flex max-h-[30rem] flex-col">
           <div className="shrink-0">
-            <SectionTitle>
+            <SectionTitle
+              aside={
+                <PeoplePicker
+                  existingNames={party.participants.map((p) => p.name)}
+                  onPick={addParticipant}
+                />
+              }
+            >
               <span id="participantes">Quem está no rolê?</span>
             </SectionTitle>
             <div className="card-surface space-y-3 p-4">
@@ -313,10 +338,6 @@ export function PartyPage() {
                   </p>
                 ) : null}
               </div>
-              <PeoplePicker
-                existingNames={party.participants.map((p) => p.name)}
-                onPick={addParticipant}
-              />
             </div>
           </div>
 
