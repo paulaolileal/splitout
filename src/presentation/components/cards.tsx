@@ -13,6 +13,25 @@ const SPLIT_LABEL: Record<string, string> = {
   custom: "Personalizado",
 };
 
+// One color per split type so the list is scannable at a glance — see the
+// --split-*/--split-*-soft tokens in styles.css.
+const SPLIT_COLOR: Record<string, { color: string; background: string }> = {
+  equal: { color: "var(--split-equal)", background: "var(--split-equal-soft)" },
+  exclusive: { color: "var(--split-exclusive)", background: "var(--split-exclusive-soft)" },
+  custom: { color: "var(--split-custom)", background: "var(--split-custom-soft)" },
+};
+
+function SplitTypeChip({ splitType }: { splitType: Expense["splitType"] }) {
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
+      style={SPLIT_COLOR[splitType]}
+    >
+      {SPLIT_LABEL[splitType]}
+    </span>
+  );
+}
+
 export function ExpenseCard({
   expense,
   participants,
@@ -44,13 +63,16 @@ export function ExpenseCard({
             <Money cents={expense.totalAmount} />
           </div>
           <p className="mt-0.5 truncate text-sm text-muted-foreground">
-            {payer ? `Pago por ${payer.name}` : "Sem pagador"} · {SPLIT_LABEL[expense.splitType]}
+            {payer ? `Pago por ${payer.name}` : "Sem pagador"}
           </p>
           <div className="mt-3 flex items-center justify-between gap-2">
-            <div className="flex -space-x-2">
-              {involved.slice(0, 6).map((id) => (
-                <ParticipantAvatar key={id} id={id} name={byId[id]?.name ?? "?"} size="sm" />
-              ))}
+            <div className="flex items-center gap-2">
+              <div className="flex -space-x-2">
+                {involved.slice(0, 6).map((id) => (
+                  <ParticipantAvatar key={id} id={id} name={byId[id]?.name ?? "?"} size="sm" />
+                ))}
+              </div>
+              <SplitTypeChip splitType={expense.splitType} />
             </div>
             {!ok ? (
               <span className="rounded-full bg-negative-soft px-2.5 py-1 text-xs font-semibold text-negative">

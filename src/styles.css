@@ -65,6 +65,12 @@
   --color-positive-soft: var(--positive-soft);
   --color-negative: var(--negative);
   --color-negative-soft: var(--negative-soft);
+  --color-split-equal: var(--split-equal);
+  --color-split-equal-soft: var(--split-equal-soft);
+  --color-split-exclusive: var(--split-exclusive);
+  --color-split-exclusive-soft: var(--split-exclusive-soft);
+  --color-split-custom: var(--split-custom);
+  --color-split-custom-soft: var(--split-custom-soft);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
   --shadow-card: var(--shadow-card);
@@ -98,6 +104,12 @@
   --positive-soft: oklch(0.94 0.05 155);
   --negative: oklch(0.56 0.19 25);
   --negative-soft: oklch(0.95 0.04 30);
+  --split-equal: oklch(0.5 0.18 240);
+  --split-equal-soft: oklch(0.94 0.04 240);
+  --split-exclusive: oklch(0.62 0.16 70);
+  --split-exclusive-soft: oklch(0.94 0.06 70);
+  --split-custom: oklch(0.52 0.19 300);
+  --split-custom-soft: oklch(0.94 0.04 300);
   --shadow-card: 0 1px 2px oklch(0.2 0.03 265 / 0.05), 0 12px 28px -18px oklch(0.2 0.03 265 / 0.35);
   --shadow-pop: 0 18px 40px -20px oklch(0.2 0.03 265 / 0.45);
   --avatar-1: oklch(0.62 0.17 25);
@@ -138,6 +150,12 @@
   --positive-soft: oklch(0.3 0.06 156);
   --negative: oklch(0.7 0.16 25);
   --negative-soft: oklch(0.31 0.07 25);
+  --split-equal: oklch(0.75 0.13 240);
+  --split-equal-soft: oklch(0.3 0.06 240);
+  --split-exclusive: oklch(0.78 0.13 70);
+  --split-exclusive-soft: oklch(0.32 0.07 70);
+  --split-custom: oklch(0.75 0.14 300);
+  --split-custom-soft: oklch(0.3 0.06 300);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
   --muted: oklch(0.279 0.041 260.031);
