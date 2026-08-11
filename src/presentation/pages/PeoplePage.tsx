@@ -8,6 +8,7 @@ import { PersonEditor } from "@/presentation/components/PersonEditor";
 import { usePeople, useSavePerson, useDeletePerson } from "@/hooks/queries";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useEnsureDefaultPerson } from "@/hooks/useEnsureDefaultPerson";
+import { maskPhoneInput } from "@/domain/format";
 import type { Person } from "@/domain/types";
 
 export function PeoplePage() {
@@ -83,7 +84,9 @@ export function PeoplePage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{person.name}</p>
                     {person.phone ? (
-                      <p className="text-xs text-muted-foreground">{person.phone}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {maskPhoneInput(person.phone)}
+                      </p>
                     ) : null}
                   </div>
                   <Pencil aria-hidden="true" className="size-4 text-muted-foreground" />

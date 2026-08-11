@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Caution } from "@icon-park/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { newPerson } from "@/domain/factories";
-import { maskPhoneInput } from "@/domain/format";
+import { isValidPhone, maskPhoneInput, toLocalPhoneDigits } from "@/domain/format";
 import type { Person } from "@/domain/types";
 
 export function PersonEditor({
@@ -19,7 +19,9 @@ export function PersonEditor({
   onDelete?: ((id: string) => void) | undefined;
 }) {
   const [name, setName] = useState(person?.name ?? "");
-  const [phone, setPhone] = useState(person?.phone ?? "");
+  // Stored as plain digits (DDD + number, no punctuation) — `maskPhoneInput`
+  // formats them for display only, it never becomes the state itself.
+  const [phone, setPhone] = useState(toLocalPhoneDigits(person?.phone ?? ""));
   const [pixKey, setPixKey] = useState(person?.pixKey ?? "");
   const [touched, setTouched] = useState(false);
 
@@ -29,23 +31,24 @@ export function PersonEditor({
   if (key !== lastKey) {
     setLastKey(key);
     setName(person?.name ?? "");
-    setPhone(person?.phone ?? "");
+    setPhone(toLocalPhoneDigits(person?.phone ?? ""));
     setPixKey(person?.pixKey ?? "");
     setTouched(false);
   }
 
-  const error = !name.trim() ? "Dê um nome para a pessoa." : null;
+  const nameError = !name.trim() ? "Dê um nome para a pessoa." : null;
+  const phoneError = phone && !isValidPhone(phone) ? "Telefone inválido. Inclua o DDD." : null;
+  const error = nameError ?? phoneError;
 
   const save = () => {
     setTouched(true);
     if (error) return;
     const base = person ?? newPerson(name);
-    const trimmedPhone = phone.trim();
     const trimmedPixKey = pixKey.trim();
     onSave({
       ...base,
       name: name.trim(),
-      ...(trimmedPhone ? { phone: trimmedPhone } : {}),
+      ...(phone ? { phone } : {}),
       ...(trimmedPixKey ? { pixKey: trimmedPixKey } : {}),
       updatedAt: Date.now(),
     });
@@ -77,9 +80,9 @@ export function PersonEditor({
             <input
               aria-label="Telefone"
               type="tel"
-              value={phone}
-              onChange={(e) => setPhone(maskPhoneInput(e.target.value))}
-              placeholder="+55 31 9 9999-9999"
+              value={maskPhoneInput(phone)}
+              onChange={(e) => setPhone(toLocalPhoneDigits(e.target.value))}
+              placeholder="(31) 99999-9999"
               className="w-full rounded-2xl border border-input bg-card px-4 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             />
           </div>

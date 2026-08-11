@@ -68,27 +68,44 @@ export function buildWhatsAppLink(phone: string | null | undefined, text: string
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
-/** Progressively masks a Brazilian phone number as `+55 31 9 9999-9999`
- * (country code, DDD, mobile "9", hyphenated number) while the user types.
- * Extracts digits from the raw input and rebuilds the mask up to the
- * amount currently available, so it never breaks mid-typing (e.g. while
- * deleting characters or pasting a partial number). Caps at 13 digits —
- * 55 + 2-digit DDD + 9 + 8-digit number. */
+/** Strips `rawValue` down to just its DDD + local-number digits (max 11:
+ * 2-digit DDD + up to 9-digit number), dropping a leading Brazilian country
+ * code ("55") if the user typed one — the app never requires it, since
+ * `toWhatsAppDigits` adds it automatically for any bare 10/11-digit local
+ * number. This is the canonical digits-only form `person.phone` is stored
+ * as; `maskPhoneInput` and `isValidPhone` both build on it. */
+export function toLocalPhoneDigits(rawValue: string): string {
+  let digits = rawValue.replace(/\D/g, "");
+  if (digits.length > 11 && digits.startsWith("55")) digits = digits.slice(2);
+  return digits.slice(0, 11);
+}
+
+/** Formats digits (or any raw phone string) as `(31) 99999-9999` for
+ * *display only* — it never decides what gets stored. Callers keep the
+ * plain digits (`toLocalPhoneDigits`) as the source of truth and only run
+ * them through this for the input's `value`/read-only display, so the mask
+ * can't corrupt what the user actually typed (e.g. while deleting
+ * characters or pasting a partial number). */
 export function maskPhoneInput(rawValue: string): string {
-  const digits = rawValue.replace(/\D/g, "").slice(0, 13);
+  const digits = toLocalPhoneDigits(rawValue);
   if (digits.length === 0) return "";
 
-  let result = "+";
-  result += digits.slice(0, 2); // country code
-  if (digits.length <= 2) return result;
+  const ddd = digits.slice(0, 2);
+  if (digits.length <= 2) return `(${ddd}`;
 
-  result += ` ${digits.slice(2, 4)}`; // DDD
-  if (digits.length <= 4) return result;
+  const rest = digits.slice(2);
+  if (rest.length <= 4) return `(${ddd}) ${rest}`;
+  return `(${ddd}) ${rest.slice(0, -4)}-${rest.slice(-4)}`;
+}
 
-  result += ` ${digits.slice(4, 5)}`; // mobile "9"
-  if (digits.length <= 5) return result;
-
-  const rest = digits.slice(5, 13);
-  result += rest.length > 4 ? ` ${rest.slice(0, 4)}-${rest.slice(4)}` : ` ${rest}`;
-  return result;
+/** A phone is valid when it has a DDD (area code 11-99) plus a landline
+ * (8-digit) or mobile (9-digit, starting with "9") local number — an
+ * optional leading "55" country code is accepted but not required. */
+export function isValidPhone(rawValue: string): boolean {
+  const digits = toLocalPhoneDigits(rawValue);
+  if (digits.length !== 10 && digits.length !== 11) return false;
+  const ddd = Number(digits.slice(0, 2));
+  if (ddd < 11 || ddd > 99) return false;
+  if (digits.length === 11 && digits[2] !== "9") return false;
+  return true;
 }
