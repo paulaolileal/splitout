@@ -57,37 +57,29 @@ export function HomePage() {
           >
             <X aria-hidden="true" className="size-3.5" /> Cancelar
           </button>
-        ) : (
-          <>
-            {parties && parties.length > 1 ? (
-              <button
-                type="button"
-                onClick={() => setSelectionMode(true)}
-                className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground sm:inline-flex"
-              >
-                <CheckSquare aria-hidden="true" className="size-3.5" /> Selecionar
-              </button>
-            ) : null}
-            <Link
-              to="/role/novo"
-              className="hidden items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-pop sm:inline-flex"
-            >
-              <Plus aria-hidden="true" className="size-4" /> Novo rolê
-            </Link>
-          </>
-        )
+        ) : null
       }
     >
       <SectionTitle
         aside={
-          !selectionMode && parties && parties.length > 1 ? (
-            <button
-              type="button"
-              onClick={() => setSelectionMode(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground sm:hidden"
-            >
-              <CheckSquare aria-hidden="true" className="size-3.5" /> Selecionar
-            </button>
+          !selectionMode ? (
+            <div className="flex items-center gap-2">
+              {parties && parties.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectionMode(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-bold text-background shadow-pop"
+                >
+                  <CheckSquare aria-hidden="true" className="size-4" /> Consolidar
+                </button>
+              ) : null}
+              <Link
+                to="/role/novo"
+                className="hidden items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-pop sm:inline-flex"
+              >
+                <Plus aria-hidden="true" className="size-4" /> Novo rolê
+              </Link>
+            </div>
           ) : null
         }
       >
