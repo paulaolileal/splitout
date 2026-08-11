@@ -6,6 +6,7 @@ import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
 import { PersonEditor } from "@/presentation/components/PersonEditor";
 import { usePeople, useSavePerson, useDeletePerson } from "@/hooks/queries";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useEnsureDefaultPerson } from "@/hooks/useEnsureDefaultPerson";
 import type { Person } from "@/domain/types";
 
 export function PeoplePage() {
@@ -14,6 +15,7 @@ export function PeoplePage() {
   const savePerson = useSavePerson();
   const deletePerson = useDeletePerson();
   const [editing, setEditing] = useState<Person | null | undefined>(undefined);
+  useEnsureDefaultPerson(people, !isLoading);
 
   return (
     <AppShell>

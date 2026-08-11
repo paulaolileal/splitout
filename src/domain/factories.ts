@@ -18,9 +18,15 @@ export function createPartyObject(name: string, emoji: string, date: string): Pa
   };
 }
 
-export function newParticipant(name: string, phone?: string): Participant {
+export function newParticipant(name: string, phone?: string, pixKey?: string): Participant {
   const trimmedPhone = phone?.trim();
-  return { id: uid(), name: name.trim(), ...(trimmedPhone ? { phone: trimmedPhone } : {}) };
+  const trimmedPixKey = pixKey?.trim();
+  return {
+    id: uid(),
+    name: name.trim(),
+    ...(trimmedPhone ? { phone: trimmedPhone } : {}),
+    ...(trimmedPixKey ? { pixKey: trimmedPixKey } : {}),
+  };
 }
 
 export function newExpense(paidBy: string, sharedWith: string[]): Expense {
@@ -38,13 +44,15 @@ export function newExpense(paidBy: string, sharedWith: string[]): Expense {
   };
 }
 
-export function newPerson(name: string, phone?: string): Person {
+export function newPerson(name: string, phone?: string, pixKey?: string): Person {
   const now = Date.now();
   const trimmedPhone = phone?.trim();
+  const trimmedPixKey = pixKey?.trim();
   return {
     id: uid(),
     name: name.trim(),
     ...(trimmedPhone ? { phone: trimmedPhone } : {}),
+    ...(trimmedPixKey ? { pixKey: trimmedPixKey } : {}),
     createdAt: now,
     updatedAt: now,
   };
@@ -54,5 +62,5 @@ export function newPerson(name: string, phone?: string): Person {
  * a snapshot, not a live reference; editing the person later never changes
  * participants already added to a party. */
 export function participantFromPerson(person: Person): Participant {
-  return newParticipant(person.name, person.phone);
+  return newParticipant(person.name, person.phone, person.pixKey);
 }

@@ -22,7 +22,7 @@ export const SHEET_SPECS: SheetSpec[] = [
   },
   {
     title: "participants",
-    headers: ["participant_id", "party_id", "nome", "telefone"],
+    headers: ["participant_id", "party_id", "nome", "telefone", "chave_pix"],
   },
   {
     title: "expenses",
@@ -52,7 +52,7 @@ export const SHEET_SPECS: SheetSpec[] = [
   },
   {
     title: "people",
-    headers: ["person_id", "nome", "telefone", "criado_em", "atualizado_em"],
+    headers: ["person_id", "nome", "telefone", "criado_em", "atualizado_em", "chave_pix"],
   },
 ];
 

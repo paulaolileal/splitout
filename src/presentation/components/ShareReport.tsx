@@ -94,6 +94,38 @@ export function ShareActions({ url, text }: { url: string; text: string }) {
   );
 }
 
+/** Small "copy Pix key" button used inside `pay`/`get` list items — mirrors
+ * the copy/copied feedback pattern from `ShareActions` above, scoped to a
+ * single item via its own local state. */
+function CopyPixButton({ pix, name }: { pix: string; name: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(pix);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      aria-label={`Copiar chave Pix de ${name}`}
+      className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
+    >
+      {copied ? (
+        <Check aria-hidden="true" className="size-3.5 text-positive" />
+      ) : (
+        <Copy aria-hidden="true" className="size-3.5" />
+      )}
+    </button>
+  );
+}
+
 export function ShareReport({
   snapshot,
   youLabel = "Você",
@@ -176,6 +208,7 @@ export function ShareReport({
                 <ParticipantAvatar name={line.n} />
                 <span className="flex-1 truncate font-semibold">{line.n}</span>
                 <Money cents={line.a} tone="negative" />
+                {line.pix ? <CopyPixButton pix={line.pix} name={line.n} /> : null}
               </li>
             ))}
           </ul>
@@ -193,6 +226,7 @@ export function ShareReport({
                 <ParticipantAvatar name={line.n} />
                 <span className="flex-1 truncate font-semibold">{line.n}</span>
                 <Money cents={line.a} tone="positive" />
+                {line.pix ? <CopyPixButton pix={line.pix} name={line.n} /> : null}
               </li>
             ))}
           </ul>

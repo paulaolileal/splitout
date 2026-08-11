@@ -67,3 +67,28 @@ export function buildWhatsAppLink(phone: string | null | undefined, text: string
   const digits = phone ? toWhatsAppDigits(phone) : "";
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
+
+/** Progressively masks a Brazilian phone number as `+55 31 9 9999-9999`
+ * (country code, DDD, mobile "9", hyphenated number) while the user types.
+ * Extracts digits from the raw input and rebuilds the mask up to the
+ * amount currently available, so it never breaks mid-typing (e.g. while
+ * deleting characters or pasting a partial number). Caps at 13 digits —
+ * 55 + 2-digit DDD + 9 + 8-digit number. */
+export function maskPhoneInput(rawValue: string): string {
+  const digits = rawValue.replace(/\D/g, "").slice(0, 13);
+  if (digits.length === 0) return "";
+
+  let result = "+";
+  result += digits.slice(0, 2); // country code
+  if (digits.length <= 2) return result;
+
+  result += ` ${digits.slice(2, 4)}`; // DDD
+  if (digits.length <= 4) return result;
+
+  result += ` ${digits.slice(4, 5)}`; // mobile "9"
+  if (digits.length <= 5) return result;
+
+  const rest = digits.slice(5, 13);
+  result += rest.length > 4 ? ` ${rest.slice(0, 4)}-${rest.slice(4)}` : ` ${rest}`;
+  return result;
+}

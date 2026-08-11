@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { newPerson } from "@/domain/factories";
+import { maskPhoneInput } from "@/domain/format";
 import type { Person } from "@/domain/types";
 
 export function PersonEditor({
@@ -18,6 +19,7 @@ export function PersonEditor({
 }) {
   const [name, setName] = useState(person?.name ?? "");
   const [phone, setPhone] = useState(person?.phone ?? "");
+  const [pixKey, setPixKey] = useState(person?.pixKey ?? "");
   const [touched, setTouched] = useState(false);
 
   // Reset the draft whenever a different person (or "new") is opened.
@@ -27,6 +29,7 @@ export function PersonEditor({
     setLastKey(key);
     setName(person?.name ?? "");
     setPhone(person?.phone ?? "");
+    setPixKey(person?.pixKey ?? "");
     setTouched(false);
   }
 
@@ -37,24 +40,26 @@ export function PersonEditor({
     if (error) return;
     const base = person ?? newPerson(name);
     const trimmedPhone = phone.trim();
+    const trimmedPixKey = pixKey.trim();
     onSave({
       ...base,
       name: name.trim(),
       ...(trimmedPhone ? { phone: trimmedPhone } : {}),
+      ...(trimmedPixKey ? { pixKey: trimmedPixKey } : {}),
       updatedAt: Date.now(),
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-3xl p-0 sm:max-w-sm">
-        <DialogHeader className="border-b border-border px-5 py-4">
+      <DialogContent className="flex max-h-[85vh] w-[calc(100%-1.5rem)] max-w-sm flex-col rounded-3xl p-0 sm:max-w-sm">
+        <DialogHeader className="shrink-0 border-b border-border px-5 py-4">
           <DialogTitle className="text-lg font-extrabold">
             {person ? "Editar pessoa" : "Nova pessoa"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 px-5 py-5">
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
           <div>
             <p className="mb-2 text-sm font-semibold">Nome</p>
             <input
@@ -72,15 +77,25 @@ export function PersonEditor({
               aria-label="Telefone"
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(11) 91234-5678"
+              onChange={(e) => setPhone(maskPhoneInput(e.target.value))}
+              placeholder="+55 31 9 9999-9999"
+              className="w-full rounded-2xl border border-input bg-card px-4 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            />
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-semibold">Chave PIX (opcional)</p>
+            <input
+              aria-label="Chave PIX"
+              value={pixKey}
+              onChange={(e) => setPixKey(e.target.value)}
+              placeholder="CPF, e-mail, telefone ou chave aleatória"
               className="w-full rounded-2xl border border-input bg-card px-4 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             />
           </div>
           {touched && error ? <p className="text-sm text-destructive">⚠️ {error}</p> : null}
         </div>
 
-        <div className="sticky bottom-0 flex gap-2 border-t border-border bg-card px-5 py-4">
+        <div className="flex shrink-0 gap-2 border-t border-border bg-card px-5 py-4">
           {onDelete && person ? (
             <button
               type="button"

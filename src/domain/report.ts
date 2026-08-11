@@ -9,6 +9,7 @@ export function buildSnapshot(party: Party, participantId: string): ShareSnapsho
   const { balances, transfers } = settlementFor(party);
   const balance = balances.find((b) => b.participantId === participantId);
   const nameOf = (id: string) => party.participants.find((p) => p.id === id)?.name ?? "?";
+  const pixOf = (id: string) => party.participants.find((p) => p.id === id)?.pixKey;
 
   return {
     v: 1,
@@ -20,10 +21,16 @@ export function buildSnapshot(party: Party, participantId: string): ShareSnapsho
     q: balance?.paid ?? 0,
     pay: transfers
       .filter((t) => t.from === participantId)
-      .map((t) => ({ n: nameOf(t.to), a: t.amount })),
+      .map((t) => {
+        const pix = pixOf(t.to);
+        return { n: nameOf(t.to), a: t.amount, ...(pix ? { pix } : {}) };
+      }),
     get: transfers
       .filter((t) => t.to === participantId)
-      .map((t) => ({ n: nameOf(t.from), a: t.amount })),
+      .map((t) => {
+        const pix = pixOf(t.from);
+        return { n: nameOf(t.from), a: t.amount, ...(pix ? { pix } : {}) };
+      }),
   };
 }
 
@@ -47,8 +54,11 @@ export function buildGroupShareText(party: Party): string {
     return `🎉 Acerto do rolê "${party.name}": está tudo certo, ninguém deve nada!`;
   }
   const nameOf = (id: string) => party.participants.find((p) => p.id === id)?.name ?? "?";
-  const lines = transfers.map(
-    (t) => `• ${nameOf(t.from)} paga ${formatBRL(t.amount)} para ${nameOf(t.to)}`,
-  );
+  const pixOf = (id: string) => party.participants.find((p) => p.id === id)?.pixKey;
+  const lines = transfers.map((t) => {
+    const pix = pixOf(t.to);
+    const pixSuffix = pix ? ` (Pix: ${pix})` : "";
+    return `• ${nameOf(t.from)} paga ${formatBRL(t.amount)} para ${nameOf(t.to)}${pixSuffix}`;
+  });
   return `💸 Acerto do rolê "${party.name}":\n${lines.join("\n")}`;
 }

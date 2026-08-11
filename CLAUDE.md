@@ -45,20 +45,22 @@ presentation → hooks → domain ← infrastructure
 | Path | Role |
 | --- | --- |
 | `src/domain/types.ts` | `Party`, `Participant`, `Expense`, `Allocation`, `Percentage`, `Person`, `Balance`, `Transfer`. `SplitType` is `"equal" \| "exclusive" \| "custom"`; `custom` has a `CustomMode` of `"amount"` or `"percentage"` |
-| `src/domain/engine.ts` | Pure functions: `allocateExpense` (per `splitType`/`customMode`), `computeBalances`, `settle` (greedy min-transfer settlement), `settlementFor`. Covered by `engine.test.ts` |
-| `src/domain/factories.ts` | `uid()`, `createPartyObject`, `newParticipant`, `newExpense`, `newPerson`, `participantFromPerson` (copies a registered `Person` into a party-scoped `Participant` — a snapshot, never a live reference) — pure entity constructors |
-| `src/domain/share.ts` / `report.ts` | Base64url snapshot encode/decode for the public share link, `buildSnapshot()`, and the WhatsApp share texts `buildIndividualShareText()`/`buildGroupShareText()` |
+| `src/domain/engine.ts` | Pure functions: `allocateExpense` (per `splitType`/`customMode`), `computeBalances`, `settle` (pairwise debt settlement — nets only reciprocal debts between the same two people, never routes a debt through an unrelated third person via net-balance matching), `settlementFor`. Covered by `engine.test.ts` |
+| `src/domain/factories.ts` | `uid()`, `createPartyObject`, `newParticipant`, `newExpense`, `newPerson`, `participantFromPerson` (copies a registered `Person` — including `pixKey` — into a party-scoped `Participant`, a snapshot, never a live reference) — pure entity constructors |
+| `src/domain/format.ts` | `formatBRL`, `formatDate`, `buildWhatsAppLink`, `maskPhoneInput` (progressive `+55 31 9 9999-9999` mask applied as the user types) |
+| `src/domain/share.ts` / `report.ts` | Base64url snapshot encode/decode for the public share link, `buildSnapshot()` (each `pay`/`get` line carries the counterpart's `pixKey`, when set), and the WhatsApp share texts `buildIndividualShareText()`/`buildGroupShareText()` (the latter appends `(Pix: <chave>)` per transfer when the payee has one) |
 | `src/domain/repository.ts` | `PartyRepository` and `PersonRepository` interfaces — the contracts every backend must implement |
 | `src/application/repositoryProvider.ts` | Singleton factory — builds/caches the `GoogleSheetsRepository` for the active user's spreadsheet |
 | `src/application/ensureSchema.ts` | Memoized per-spreadsheet call to `SheetsInitializer.ensureSheets` — self-heals schema drift (new/renamed tabs) for users who linked their spreadsheet before a schema change. Called from `SpreadsheetRoute` (every page load) and `SetupPage` |
 | `src/hooks/queries.ts` | TanStack Query hooks: `useParties`, `useParty` (returns `{ party, update }`), `useCreateParty`, `useDeleteParty`, `usePeople`, `useSavePerson`, `useDeletePerson` |
+| `src/hooks/useEnsureDefaultPerson.ts` | Seeds the signed-in Google user as a registered `Person` the first time `/pessoas` loads and no person matches their name — idempotent via a `localStorage` flag keyed by email, so a person the user deliberately deletes afterwards is never recreated |
 | `src/store/authStore.ts` | Zustand (persisted, `splitout:auth`): signed-in `UserInfo` (name/email/picture) shown in the UI — **never the token** |
 | `src/store/spreadsheetStore.ts` | Zustand (persisted, `splitout:spreadsheets`): maps each user's email to their spreadsheet id |
 | `src/store/themeStore.ts` | Zustand (persisted, `splitout:theme`): `"light" \| "dark" \| "system"` preference, default `"system"` |
 | `src/hooks/useTheme.ts` | Resolves the active theme (preference + OS `prefers-color-scheme`), toggles the `.dark` class on `<html>`, keeps it in sync with live OS changes, and updates `<meta name="theme-color">`. Called once in `App.tsx` |
 | `src/presentation/components/ThemeToggle.tsx` | Header dropdown (Light/Dark/System) rendered inside `AppShell` |
 | `src/presentation/components/PeoplePicker.tsx` | Popover+Command picker used when adding a participant to a party — pick a registered person or type an ad-hoc name |
-| `src/presentation/components/PersonEditor.tsx` | Small dialog to create/edit/delete a registered person (name + phone) |
+| `src/presentation/components/PersonEditor.tsx` | Small dialog to create/edit/delete a registered person (name, phone with the `maskPhoneInput` mask, and Pix key) |
 | `src/presentation/components/WhatsAppShareModal.tsx` | Dialog to send a settlement summary via WhatsApp — individual (`participant` set, `wa.me/<phone>`) or group (`participant` absent, `wa.me/?text=...`, no fixed recipient) |
 | `src/presentation/pages/PeoplePage.tsx` (`/pessoas`) | CRUD screen for the registered-people directory |
 | `src/services/config.ts` | Reads `VITE_GOOGLE_CLIENT_ID` and the Drive OAuth scope |
@@ -97,17 +99,17 @@ registry not tied to any party (see "Write strategy" below).
 | Tab | Headers |
 | --- | --- |
 | `parties` | `party_id, nome, emoji, data, criado_em, atualizado_em` |
-| `participants` | `participant_id, party_id, nome, telefone` |
+| `participants` | `participant_id, party_id, nome, telefone, chave_pix` |
 | `expenses` | `expense_id, party_id, descricao, emoji, valor_total_centavos, paid_by, split_type, custom_mode, ordem` |
 | `expense_shared_with` | `expense_id, participant_id` (used by `splitType: "equal"` **and** `"exclusive"` — exclusive just constrains this to a single row) |
 | `expense_allocations` | `expense_id, participant_id, valor_centavos` (used by `"custom"` + `customMode: "amount"`) |
 | `expense_percentages` | `expense_id, participant_id, percentual` (used by `"custom"` + `customMode: "percentage"`; 0-100 per row, converted to exact cents via the same largest-remainder `distribute()` used by `"equal"`) |
-| `people` | `person_id, nome, telefone, criado_em, atualizado_em` — the registered-people directory, reusable across every party |
+| `people` | `person_id, nome, telefone, criado_em, atualizado_em, chave_pix` — the registered-people directory, reusable across every party |
 
 Monetary values are integer cents, stored as plain numbers in the sheet
 (`valor_total_centavos`, `valor_centavos`). `ordem` preserves expense order
-within a party (rewritten as a 0-based index on every save). `telefone` is
-always optional (empty string when absent).
+within a party (rewritten as a 0-based index on every save). `telefone` and
+`chave_pix` are always optional (empty string when absent).
 
 ### Write strategy — "whole-table overwrite" (Party) + isolated `people`
 

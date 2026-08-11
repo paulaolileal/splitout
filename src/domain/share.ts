@@ -3,6 +3,8 @@ export interface ShareLine {
   n: string;
   /** cents */
   a: number;
+  /** counterpart's Pix key, when registered */
+  pix?: string;
 }
 
 export interface ShareSnapshot {

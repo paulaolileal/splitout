@@ -8,6 +8,8 @@ export interface Participant {
   name: string;
   /** Optional — copied from a registered `Person` (or typed ad-hoc), never a live reference. */
   phone?: string;
+  /** Optional Pix key — copied from a registered `Person` (or typed ad-hoc), never a live reference. */
+  pixKey?: string;
 }
 
 export interface Allocation {
@@ -58,6 +60,7 @@ export interface Person {
   id: string;
   name: string;
   phone?: string;
+  pixKey?: string;
   createdAt: number;
   updatedAt: number;
 }

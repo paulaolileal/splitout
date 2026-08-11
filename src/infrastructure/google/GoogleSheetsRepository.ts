@@ -63,6 +63,7 @@ interface ParticipantRow {
   party_id: string;
   nome: string;
   telefone: string;
+  chave_pix: string;
 }
 
 interface ExpenseRow {
@@ -100,6 +101,7 @@ interface PersonRow {
   telefone: string;
   criado_em: string;
   atualizado_em: string;
+  chave_pix: string;
 }
 
 interface AllRows {
@@ -183,6 +185,7 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
         id: r.participant_id,
         name: r.nome,
         ...(r.telefone ? { phone: r.telefone } : {}),
+        ...(r.chave_pix ? { pixKey: r.chave_pix } : {}),
       });
       participantsByParty.set(r.party_id, list);
     }
@@ -268,7 +271,7 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
         party.updatedAt,
       ]);
       for (const p of party.participants) {
-        participantsRows.push([p.id, party.id, p.name, p.phone ?? ""]);
+        participantsRows.push([p.id, party.id, p.name, p.phone ?? "", p.pixKey ?? ""]);
       }
       party.expenses.forEach((e, ordem) => {
         expensesRows.push([
@@ -357,6 +360,7 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
         id: r.person_id,
         name: r.nome,
         ...(r.telefone ? { phone: r.telefone } : {}),
+        ...(r.chave_pix ? { pixKey: r.chave_pix } : {}),
         createdAt: Number(r.criado_em) || 0,
         updatedAt: Number(r.atualizado_em) || 0,
       }));
@@ -369,6 +373,7 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
       p.phone ?? "",
       p.createdAt,
       p.updatedAt,
+      p.pixKey ?? "",
     ]);
 
     await this.request("/values:batchClear", {
@@ -404,7 +409,7 @@ export class GoogleSheetsRepository implements PartyRepository, PersonRepository
 
 const HEADERS: Record<string, string[]> = {
   [SHEETS.parties]: ["party_id", "nome", "emoji", "data", "criado_em", "atualizado_em"],
-  [SHEETS.participants]: ["participant_id", "party_id", "nome", "telefone"],
+  [SHEETS.participants]: ["participant_id", "party_id", "nome", "telefone", "chave_pix"],
   [SHEETS.expenses]: [
     "expense_id",
     "party_id",
@@ -419,5 +424,5 @@ const HEADERS: Record<string, string[]> = {
   [SHEETS.sharedWith]: ["expense_id", "participant_id"],
   [SHEETS.allocations]: ["expense_id", "participant_id", "valor_centavos"],
   [SHEETS.percentages]: ["expense_id", "participant_id", "percentual"],
-  [PEOPLE_SHEET]: ["person_id", "nome", "telefone", "criado_em", "atualizado_em"],
+  [PEOPLE_SHEET]: ["person_id", "nome", "telefone", "criado_em", "atualizado_em", "chave_pix"],
 };
