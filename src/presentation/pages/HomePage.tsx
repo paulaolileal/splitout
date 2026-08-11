@@ -112,13 +112,15 @@ export function HomePage() {
         </ul>
       )}
 
-      <Link
-        to="/role/novo"
-        aria-label="Novo rolê"
-        className="fixed right-5 bottom-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-4 font-bold text-primary-foreground shadow-pop sm:hidden"
-      >
-        <Plus aria-hidden="true" className="size-5" /> Novo rolê
-      </Link>
+      <div className="pointer-events-none sticky bottom-6 z-30 flex justify-end sm:hidden">
+        <Link
+          to="/role/novo"
+          aria-label="Novo rolê"
+          className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary px-5 py-4 font-bold text-primary-foreground shadow-pop"
+        >
+          <Plus aria-hidden="true" className="size-5" /> Novo rolê
+        </Link>
+      </div>
     </AppShell>
   );
 }
