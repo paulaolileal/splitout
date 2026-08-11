@@ -1,24 +1,26 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, RefreshCw, Trash2, PartyPopper } from "lucide-react";
+import { ArrowLeft, MessageCircle, Plus, RefreshCw, Trash2, PartyPopper } from "lucide-react";
 import { AppShell, EmptyState, Money, SectionTitle } from "@/presentation/components/primitives";
 import { ParticipantAvatar, ParticipantChip } from "@/presentation/components/ParticipantAvatar";
 import { BalanceCard, ExpenseCard, SettlementCard } from "@/presentation/components/cards";
 import { ExpenseEditor } from "@/presentation/components/ExpenseEditor";
+import { PeoplePicker } from "@/presentation/components/PeoplePicker";
+import { WhatsAppShareModal } from "@/presentation/components/WhatsAppShareModal";
 import { useDeleteParty, useParty } from "@/hooks/queries";
-import { newExpense, newParticipant } from "@/domain/factories";
+import { newExpense } from "@/domain/factories";
 import { partyTotal, settlementFor } from "@/domain/engine";
 import { formatDate } from "@/domain/format";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import type { Expense } from "@/domain/types";
+import type { Expense, Participant } from "@/domain/types";
 
 export function PartyPage() {
   const { id = "" } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { party, isLoading, isError, error, refetch, update } = useParty(id);
   const deleteParty = useDeleteParty();
-  const [newName, setNewName] = useState("");
   const [editing, setEditing] = useState<Expense | null>(null);
+  const [waTarget, setWaTarget] = useState<Participant | "group" | null>(null);
 
   useDocumentTitle(party ? `${party.name} — Splitout!` : "Seu rolê — Splitout!");
 
@@ -75,17 +77,17 @@ export function PartyPage() {
   const { balances, transfers } = settlementFor(party);
   const balanceOf = (pid: string) => balances.find((b) => b.participantId === pid);
 
-  const addParticipant = (event: React.FormEvent) => {
-    event.preventDefault();
-    const name = newName.trim();
-    if (!name) return;
-    if (party.participants.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
-      setNewName("");
+  const addParticipant = (participant: Participant) => {
+    if (party.participants.some((p) => p.name.toLowerCase() === participant.name.toLowerCase()))
       return;
-    }
-    update((draft) => ({ ...draft, participants: [...draft.participants, newParticipant(name)] }));
-    setNewName("");
+    update((draft) => ({ ...draft, participants: [...draft.participants, participant] }));
   };
+
+  const setParticipantPhone = (pid: string, phone: string) =>
+    update((draft) => ({
+      ...draft,
+      participants: draft.participants.map((p) => (p.id === pid ? { ...p, phone } : p)),
+    }));
 
   const removeParticipant = (pid: string) =>
     update((draft) => ({
@@ -170,22 +172,10 @@ export function PartyPage() {
                 </p>
               ) : null}
             </div>
-            <form onSubmit={addParticipant} className="flex gap-2">
-              <input
-                aria-label="Nome da pessoa"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Adicionar pessoa"
-                className="flex-1 rounded-2xl border border-input bg-card px-4 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              />
-              <button
-                type="submit"
-                aria-label="Adicionar pessoa"
-                className="rounded-2xl bg-primary px-4 py-2.5 font-bold text-primary-foreground"
-              >
-                <Plus aria-hidden="true" className="size-4" />
-              </button>
-            </form>
+            <PeoplePicker
+              existingNames={party.participants.map((p) => p.name)}
+              onPick={addParticipant}
+            />
           </div>
 
           {party.expenses.length > 0 ? (
@@ -202,6 +192,7 @@ export function PartyPage() {
                         owed={b?.owed ?? 0}
                         balance={b?.balance ?? 0}
                         onClick={() => void navigate(`/role/${party.id}/p/${p.id}`)}
+                        onWhatsApp={() => setWaTarget(p)}
                       />
                     </li>
                   );
@@ -282,11 +273,20 @@ export function PartyPage() {
           {transfers.length > 0 ? (
             <section aria-labelledby="acerto">
               <div className="card-surface animate-rise overflow-hidden">
-                <div className="flex items-center gap-2 bg-positive-soft px-5 py-4">
-                  <PartyPopper aria-hidden="true" className="size-5 text-positive" />
-                  <h2 id="acerto" className="font-extrabold text-positive">
-                    Rolê acertado!
-                  </h2>
+                <div className="flex items-center justify-between gap-2 bg-positive-soft px-5 py-4">
+                  <div className="flex items-center gap-2">
+                    <PartyPopper aria-hidden="true" className="size-5 text-positive" />
+                    <h2 id="acerto" className="font-extrabold text-positive">
+                      Rolê acertado!
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setWaTarget("group")}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-positive/30 bg-card px-3 py-1.5 text-xs font-bold text-positive"
+                  >
+                    <MessageCircle aria-hidden="true" className="size-3.5" /> Enviar no WhatsApp
+                  </button>
                 </div>
                 <ul className="space-y-3 p-4">
                   {transfers.map((t, index) => (
@@ -347,6 +347,14 @@ export function PartyPage() {
           }));
           setEditing(null);
         }}
+      />
+
+      <WhatsAppShareModal
+        open={waTarget !== null}
+        party={party}
+        participant={waTarget === "group" || waTarget === null ? undefined : waTarget}
+        onClose={() => setWaTarget(null)}
+        onSavePhone={(pid, phone) => setParticipantPhone(pid, phone)}
       />
     </AppShell>
   );

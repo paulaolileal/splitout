@@ -36,30 +36,36 @@ presentation → hooks → domain ← infrastructure
 - **`application/repositoryProvider.ts`** is the single decision point: it builds a
   `GoogleSheetsRepository` for the current user's spreadsheet (resolved via
   `spreadsheetStore`, keyed by email) and caches the instance per spreadsheet id.
-- Adding a new backend means: create a class implementing `PartyRepository`
-  (`src/domain/repository.ts`), then switch the provider — zero UI changes needed.
+- Adding a new backend means: create a class implementing `PartyRepository`/
+  `PersonRepository` (`src/domain/repository.ts`), then switch the provider —
+  zero UI changes needed.
 
 ### Key files
 
 | Path | Role |
 | --- | --- |
-| `src/domain/types.ts` | `Party`, `Participant`, `Expense`, `ExpenseItem`, `Allocation`, `Weight`, `Balance`, `Transfer` |
-| `src/domain/engine.ts` | Pure functions: `allocateExpense` (per `splitType`), `computeBalances`, `settle` (greedy min-transfer settlement), `settlementFor`. Covered by `engine.test.ts` |
-| `src/domain/factories.ts` | `uid()`, `createPartyObject`, `newParticipant`, `newExpense` — pure entity constructors |
-| `src/domain/share.ts` / `report.ts` | Base64url snapshot encode/decode for the public share link, and `buildSnapshot()` |
-| `src/domain/repository.ts` | `PartyRepository` interface — the contract every backend must implement |
+| `src/domain/types.ts` | `Party`, `Participant`, `Expense`, `Allocation`, `Percentage`, `Person`, `Balance`, `Transfer`. `SplitType` is `"equal" \| "exclusive" \| "custom"`; `custom` has a `CustomMode` of `"amount"` or `"percentage"` |
+| `src/domain/engine.ts` | Pure functions: `allocateExpense` (per `splitType`/`customMode`), `computeBalances`, `settle` (greedy min-transfer settlement), `settlementFor`. Covered by `engine.test.ts` |
+| `src/domain/factories.ts` | `uid()`, `createPartyObject`, `newParticipant`, `newExpense`, `newPerson`, `participantFromPerson` (copies a registered `Person` into a party-scoped `Participant` — a snapshot, never a live reference) — pure entity constructors |
+| `src/domain/share.ts` / `report.ts` | Base64url snapshot encode/decode for the public share link, `buildSnapshot()`, and the WhatsApp share texts `buildIndividualShareText()`/`buildGroupShareText()` |
+| `src/domain/repository.ts` | `PartyRepository` and `PersonRepository` interfaces — the contracts every backend must implement |
 | `src/application/repositoryProvider.ts` | Singleton factory — builds/caches the `GoogleSheetsRepository` for the active user's spreadsheet |
-| `src/hooks/queries.ts` | TanStack Query hooks: `useParties`, `useParty` (returns `{ party, update }`), `useCreateParty`, `useDeleteParty` |
+| `src/application/ensureSchema.ts` | Memoized per-spreadsheet call to `SheetsInitializer.ensureSheets` — self-heals schema drift (new/renamed tabs) for users who linked their spreadsheet before a schema change. Called from `SpreadsheetRoute` (every page load) and `SetupPage` |
+| `src/hooks/queries.ts` | TanStack Query hooks: `useParties`, `useParty` (returns `{ party, update }`), `useCreateParty`, `useDeleteParty`, `usePeople`, `useSavePerson`, `useDeletePerson` |
 | `src/store/authStore.ts` | Zustand (persisted, `splitout:auth`): signed-in `UserInfo` (name/email/picture) shown in the UI — **never the token** |
 | `src/store/spreadsheetStore.ts` | Zustand (persisted, `splitout:spreadsheets`): maps each user's email to their spreadsheet id |
 | `src/store/themeStore.ts` | Zustand (persisted, `splitout:theme`): `"light" \| "dark" \| "system"` preference, default `"system"` |
 | `src/hooks/useTheme.ts` | Resolves the active theme (preference + OS `prefers-color-scheme`), toggles the `.dark` class on `<html>`, keeps it in sync with live OS changes, and updates `<meta name="theme-color">`. Called once in `App.tsx` |
 | `src/presentation/components/ThemeToggle.tsx` | Header dropdown (Light/Dark/System) rendered inside `AppShell` |
+| `src/presentation/components/PeoplePicker.tsx` | Popover+Command picker used when adding a participant to a party — pick a registered person or type an ad-hoc name |
+| `src/presentation/components/PersonEditor.tsx` | Small dialog to create/edit/delete a registered person (name + phone) |
+| `src/presentation/components/WhatsAppShareModal.tsx` | Dialog to send a settlement summary via WhatsApp — individual (`participant` set, `wa.me/<phone>`) or group (`participant` absent, `wa.me/?text=...`, no fixed recipient) |
+| `src/presentation/pages/PeoplePage.tsx` (`/pessoas`) | CRUD screen for the registered-people directory |
 | `src/services/config.ts` | Reads `VITE_GOOGLE_CLIENT_ID` and the Drive OAuth scope |
 | `src/services/googleAuth.ts` | Google Identity Services OAuth flow; access token lives **in memory + sessionStorage only** — never localStorage. `initAuthScheduler()` (called once in `main.tsx`) proactively renews the token before it expires and on tab focus/visibility |
 | `src/infrastructure/google/googleApiFetch.ts` | Shared fetch wrapper used by all Google REST clients; ensures a fresh token per call and throws `GoogleAuthError` when silent refresh genuinely fails |
-| `src/infrastructure/google/GoogleSheetsRepository.ts` | The only `PartyRepository` implementation — see "Google Sheets schema" and "Write strategy" below |
-| `src/infrastructure/google/SheetsInitializer.ts` | Creates a brand-new spreadsheet with the seven required tabs/headers during `/setup` |
+| `src/infrastructure/google/GoogleSheetsRepository.ts` | The only `PartyRepository`/`PersonRepository` implementation — see "Google Sheets schema" and "Write strategy" below |
+| `src/infrastructure/google/SheetsInitializer.ts` | Creates a brand-new spreadsheet with the seven required tabs/headers during `/setup`; also the idempotent tab/header-repair logic used by `ensureSchema` |
 | `src/infrastructure/google/DriveApiClient.ts` | Finds/creates the "LealTEK Apps" Drive folder and the user's "Splitout" spreadsheet during `/setup` |
 | `src/lib/googleAuthToast.ts` | Persistent "reconnect" toast shown whenever a `GoogleAuthError` bubbles up through React Query's cache |
 | `src/presentation/App.tsx` | Route tree (see "Routing") |
@@ -83,36 +89,39 @@ screen, not the app itself.
 `SheetsInitializer` provisions exactly these seven tabs in a spreadsheet titled
 **"Splitout"**, created (or found) inside a Drive folder named **"LealTEK Apps"**
 (same pattern as every other LealTEK app — see `src/presentation/pages/SetupPage.tsx`).
-This is a normalized schema: `Party` is the aggregate root, `Participant[]` and
-`Expense[]` hang off it, and `Expense`'s four split-type arrays each get their own tab.
+Six tabs form a normalized schema for the `Party` aggregate root
+(`Participant[]`/`Expense[]` hang off it, and `Expense`'s two `custom`-mode
+arrays each get their own tab); the seventh, `people`, is an independent
+registry not tied to any party (see "Write strategy" below).
 
 | Tab | Headers |
 | --- | --- |
 | `parties` | `party_id, nome, emoji, data, criado_em, atualizado_em` |
-| `participants` | `participant_id, party_id, nome` |
-| `expenses` | `expense_id, party_id, descricao, emoji, valor_total_centavos, paid_by, split_type, ordem` |
-| `expense_shared_with` | `expense_id, participant_id` (used by `splitType: "equal"`) |
-| `expense_items` | `item_id, expense_id, descricao, valor_centavos, participant_ids` (used by `"item"`; `participant_ids` is comma-joined) |
-| `expense_allocations` | `expense_id, participant_id, valor_centavos` (used by `"custom"`) |
-| `expense_weights` | `expense_id, participant_id, peso` (used by `"weight"`) |
+| `participants` | `participant_id, party_id, nome, telefone` |
+| `expenses` | `expense_id, party_id, descricao, emoji, valor_total_centavos, paid_by, split_type, custom_mode, ordem` |
+| `expense_shared_with` | `expense_id, participant_id` (used by `splitType: "equal"` **and** `"exclusive"` — exclusive just constrains this to a single row) |
+| `expense_allocations` | `expense_id, participant_id, valor_centavos` (used by `"custom"` + `customMode: "amount"`) |
+| `expense_percentages` | `expense_id, participant_id, percentual` (used by `"custom"` + `customMode: "percentage"`; 0-100 per row, converted to exact cents via the same largest-remainder `distribute()` used by `"equal"`) |
+| `people` | `person_id, nome, telefone, criado_em, atualizado_em` — the registered-people directory, reusable across every party |
 
 Monetary values are integer cents, stored as plain numbers in the sheet
 (`valor_total_centavos`, `valor_centavos`). `ordem` preserves expense order
-within a party (rewritten as a 0-based index on every save).
+within a party (rewritten as a 0-based index on every save). `telefone` is
+always optional (empty string when absent).
 
-### Write strategy — "whole-table overwrite"
+### Write strategy — "whole-table overwrite" (Party) + isolated `people`
 
 `GoogleSheetsRepository` does **not** track row indices per entity. Every
 `saveParty`/`deleteParty` call:
 
-1. Reads all seven tabs with a `values.get` call per tab (`readAllRows`, run in
+1. Reads the six party tabs with a `values.get` call per tab (`readAllRows`, run in
    parallel via `Promise.all`) — deliberately **not** a single multi-range
    `values:batchGet`: the Sheets API echoes each `ValueRange.range` back
    normalized to the data's actual extent (e.g. `"parties!A1:F2"`), never the
    bare sheet name requested, so matching the response to a tab by that
    string always misses and silently yields "no rows" for every tab.
 2. Reassembles the full `Party[]` graph in memory and applies the mutation.
-3. Clears all seven tabs (`values:batchClear`) and rewrites them from scratch
+3. Clears all six tabs (`values:batchClear`) and rewrites them from scratch
    in one `values:batchUpdate`.
 
 Clearing before writing is what makes this safe — a plain `values.update` only
@@ -120,6 +129,10 @@ overwrites the cells inside the given range and would leave stale rows behind
 whenever the new content is shorter than the old one (e.g. removing a
 participant). The cost is touching every party's rows on every save, which is
 fine at this app's data volume (a handful of parties, dozens of rows each).
+
+`people` is read/written in complete isolation from those six tabs
+(`listPeople`/`savePerson`/`deletePerson`) — a `Person` doesn't belong to any
+party, so a person operation never touches party data and vice versa.
 
 **Known limitation**: there is no optimistic lock — two devices/tabs saving the
 same party around the same time will **last-write-wins**, silently dropping
@@ -130,6 +143,13 @@ would compare `atualizado_em` before overwriting and surface a conflict.
 The public share link (`/r/:payload`) is unaffected by any of this — it's a
 static base64url snapshot in the URL (`src/domain/share.ts`), never a live
 Sheets read.
+
+**Schema self-heal**: `src/application/ensureSchema.ts` calls
+`SheetsInitializer.ensureSheets` (idempotent — creates missing tabs, rewrites
+header rows) once per spreadsheet per session. `SpreadsheetRoute` awaits it
+before rendering any Sheets-backed page, so users who linked their
+spreadsheet before a schema change (e.g. this feature's `people` tab) pick up
+new tabs/headers automatically, without going through `/setup` again.
 
 ### Routing
 
@@ -147,6 +167,7 @@ everything except the two public routes. Unknown routes redirect to `/404`.
 | `/role/novo` | `NewPartyPage` | requires login + linked sheet |
 | `/role/:id` | `PartyPage` | requires login + linked sheet |
 | `/role/:id/p/:pid` | `ParticipantReportPage` — generates the share link for one participant | requires login + linked sheet |
+| `/pessoas` | `PeoplePage` — CRUD for the registered-people directory | requires login + linked sheet |
 
 ### Environment variables
 

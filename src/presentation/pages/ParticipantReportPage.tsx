@@ -4,9 +4,8 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 import { AppShell, EmptyState } from "@/presentation/components/primitives";
 import { ShareActions, ShareReport } from "@/presentation/components/ShareReport";
 import { useParty } from "@/hooks/queries";
-import { buildSnapshot } from "@/domain/report";
+import { buildIndividualShareText, buildSnapshot } from "@/domain/report";
 import { encodeSnapshot } from "@/domain/share";
-import { formatBRL } from "@/domain/format";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export function ParticipantReportPage() {
@@ -68,11 +67,8 @@ export function ParticipantReportPage() {
     );
   }
 
-  const toPay = snapshot.pay.reduce((a, l) => a + l.a, 0);
   const url = `${origin}/r/${encodeSnapshot(snapshot)}`;
-  const text = `💸 O acerto de ${snapshot.n} no rolê "${snapshot.p}" ficou em ${formatBRL(
-    toPay || snapshot.get.reduce((a, l) => a + l.a, 0),
-  )}. Veja os detalhes no Splitout.`;
+  const text = buildIndividualShareText(snapshot);
 
   return (
     <AppShell>

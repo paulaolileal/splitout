@@ -25,7 +25,9 @@ export function allocateExpense(expense: Expense): Record<string, number> {
     out[id] = (out[id] ?? 0) + amount;
   };
 
-  if (expense.splitType === "equal") {
+  // "exclusive" is just "equal" over a single-participant `sharedWith` —
+  // same tab, same distribution logic, only the editor UI differs.
+  if (expense.splitType === "equal" || expense.splitType === "exclusive") {
     const ids = expense.sharedWith;
     const parts = distribute(
       expense.totalAmount,
@@ -35,26 +37,13 @@ export function allocateExpense(expense: Expense): Record<string, number> {
     return out;
   }
 
-  if (expense.splitType === "item") {
-    for (const item of expense.items) {
-      const ids = item.participantIds;
-      if (ids.length === 0) continue;
-      const parts = distribute(
-        item.amount,
-        ids.map(() => 1),
-      );
-      ids.forEach((id, i) => add(id, parts[i] ?? 0));
-    }
-    return out;
-  }
-
-  if (expense.splitType === "weight") {
-    const active = expense.weights.filter((w) => w.weight > 0);
+  if (expense.customMode === "percentage") {
+    const active = expense.percentages.filter((p) => p.percent > 0);
     const parts = distribute(
       expense.totalAmount,
-      active.map((w) => w.weight),
+      active.map((p) => p.percent),
     );
-    active.forEach((w, i) => add(w.participantId, parts[i] ?? 0));
+    active.forEach((p, i) => add(p.participantId, parts[i] ?? 0));
     return out;
   }
 
@@ -64,9 +53,12 @@ export function allocateExpense(expense: Expense): Record<string, number> {
 
 /** Sum of what the split currently covers — used for validation. */
 export function splitTotal(expense: Expense): number {
-  if (expense.splitType === "item") return expense.items.reduce((a, i) => a + i.amount, 0);
-  if (expense.splitType === "custom") return expense.allocations.reduce((a, i) => a + i.amount, 0);
-  return expense.totalAmount;
+  if (expense.splitType !== "custom") return expense.totalAmount;
+  if (expense.customMode === "percentage") {
+    const percentSum = expense.percentages.reduce((a, p) => a + p.percent, 0);
+    return Math.round((expense.totalAmount * percentSum) / 100);
+  }
+  return expense.allocations.reduce((a, i) => a + i.amount, 0);
 }
 
 export function expenseIsBalanced(expense: Expense): boolean {

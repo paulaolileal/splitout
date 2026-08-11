@@ -9,9 +9,11 @@ interface SheetSpec {
 
 /**
  * Normalized schema for the Party aggregate (Party -> Participant[] +
- * Expense[] -> ExpenseItem[]/Allocation[]/Weight[]). See CLAUDE.md for the
- * full column reference and the "whole-table overwrite" write strategy that
- * reads/writes these seven tabs together in `GoogleSheetsRepository`.
+ * Expense[] -> Allocation[]/Percentage[]), plus the party-independent
+ * `people` registry. See CLAUDE.md for the full column reference and the
+ * "whole-table overwrite" write strategy that reads/writes the six Party
+ * tabs together in `GoogleSheetsRepository` — `people` is read/written in
+ * isolation since it doesn't belong to any single party.
  */
 export const SHEET_SPECS: SheetSpec[] = [
   {
@@ -20,7 +22,7 @@ export const SHEET_SPECS: SheetSpec[] = [
   },
   {
     title: "participants",
-    headers: ["participant_id", "party_id", "nome"],
+    headers: ["participant_id", "party_id", "nome", "telefone"],
   },
   {
     title: "expenses",
@@ -32,6 +34,7 @@ export const SHEET_SPECS: SheetSpec[] = [
       "valor_total_centavos",
       "paid_by",
       "split_type",
+      "custom_mode",
       "ordem",
     ],
   },
@@ -40,16 +43,16 @@ export const SHEET_SPECS: SheetSpec[] = [
     headers: ["expense_id", "participant_id"],
   },
   {
-    title: "expense_items",
-    headers: ["item_id", "expense_id", "descricao", "valor_centavos", "participant_ids"],
-  },
-  {
     title: "expense_allocations",
     headers: ["expense_id", "participant_id", "valor_centavos"],
   },
   {
-    title: "expense_weights",
-    headers: ["expense_id", "participant_id", "peso"],
+    title: "expense_percentages",
+    headers: ["expense_id", "participant_id", "percentual"],
+  },
+  {
+    title: "people",
+    headers: ["person_id", "nome", "telefone", "criado_em", "atualizado_em"],
   },
 ];
 

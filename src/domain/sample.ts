@@ -1,7 +1,8 @@
 import type { Party } from "./types";
 
-/** The reference scenario: Shopping / Paula, Mel, Jess / item split. Used only by the
- * read-only "/exemplo" demo page — never persisted, never written to Google Sheets. */
+/** The reference scenario: Shopping / Paula, Mel, Jess / custom split, each
+ * person assumes their own fixed amount. Used only by the read-only
+ * "/exemplo" demo page — never persisted, never written to Google Sheets. */
 export function sampleParty(): Party {
   const paula = { id: "paula", name: "Paula" };
   const mel = { id: "mel", name: "Mel" };
@@ -22,14 +23,14 @@ export function sampleParty(): Party {
         emoji: "🍝",
         totalAmount: 9000,
         paidBy: paula.id,
-        splitType: "item",
+        splitType: "custom",
         sharedWith: [paula.id, mel.id, jess.id],
-        allocations: [],
-        weights: [],
-        items: [
-          { id: "i1", description: "Macarrão", amount: 4000, participantIds: [paula.id] },
-          { id: "i2", description: "Fricassê", amount: 2000, participantIds: [mel.id] },
-          { id: "i3", description: "Comida", amount: 3000, participantIds: [jess.id] },
+        customMode: "amount",
+        percentages: [],
+        allocations: [
+          { participantId: paula.id, amount: 4000 },
+          { participantId: mel.id, amount: 2000 },
+          { participantId: jess.id, amount: 3000 },
         ],
       },
     ],

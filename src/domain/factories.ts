@@ -1,4 +1,4 @@
-import type { Expense, Participant, Party } from "./types";
+import type { Expense, Participant, Party, Person } from "./types";
 
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10);
@@ -18,8 +18,9 @@ export function createPartyObject(name: string, emoji: string, date: string): Pa
   };
 }
 
-export function newParticipant(name: string): Participant {
-  return { id: uid(), name: name.trim() };
+export function newParticipant(name: string, phone?: string): Participant {
+  const trimmedPhone = phone?.trim();
+  return { id: uid(), name: name.trim(), ...(trimmedPhone ? { phone: trimmedPhone } : {}) };
 }
 
 export function newExpense(paidBy: string, sharedWith: string[]): Expense {
@@ -31,8 +32,27 @@ export function newExpense(paidBy: string, sharedWith: string[]): Expense {
     paidBy,
     splitType: "equal",
     sharedWith,
-    items: [],
+    customMode: "amount",
     allocations: [],
-    weights: [],
+    percentages: [],
   };
+}
+
+export function newPerson(name: string, phone?: string): Person {
+  const now = Date.now();
+  const trimmedPhone = phone?.trim();
+  return {
+    id: uid(),
+    name: name.trim(),
+    ...(trimmedPhone ? { phone: trimmedPhone } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+/** Copies a registered person into a brand-new party-scoped participant —
+ * a snapshot, not a live reference; editing the person later never changes
+ * participants already added to a party. */
+export function participantFromPerson(person: Person): Participant {
+  return newParticipant(person.name, person.phone);
 }

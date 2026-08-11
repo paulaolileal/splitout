@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/domain/format";
 import { useAuthStore } from "@/store/authStore";
@@ -58,6 +58,22 @@ function UserMenu() {
   );
 }
 
+function PeopleLink() {
+  const user = useAuthStore((s) => s.user);
+  if (!user) return null;
+
+  return (
+    <Link
+      to="/pessoas"
+      title="Pessoas"
+      className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+    >
+      <Users aria-hidden="true" className="size-3.5" />
+      <span className="hidden sm:inline">Pessoas</span>
+    </Link>
+  );
+}
+
 export function AppShell({
   children,
   action,
@@ -72,6 +88,7 @@ export function AppShell({
           <Logo />
           <div className="flex items-center gap-2">
             {action}
+            <PeopleLink />
             <ThemeToggle />
             <UserMenu />
           </div>

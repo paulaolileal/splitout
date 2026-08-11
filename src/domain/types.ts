@@ -1,16 +1,13 @@
-export type SplitType = "equal" | "item" | "custom" | "weight";
+export type SplitType = "equal" | "exclusive" | "custom";
+
+/** Only meaningful when `splitType === "custom"`. */
+export type CustomMode = "amount" | "percentage";
 
 export interface Participant {
   id: string;
   name: string;
-}
-
-export interface ExpenseItem {
-  id: string;
-  description: string;
-  /** cents */
-  amount: number;
-  participantIds: string[];
+  /** Optional — copied from a registered `Person` (or typed ad-hoc), never a live reference. */
+  phone?: string;
 }
 
 export interface Allocation {
@@ -19,9 +16,10 @@ export interface Allocation {
   amount: number;
 }
 
-export interface Weight {
+export interface Percentage {
   participantId: string;
-  weight: number;
+  /** 0-100 */
+  percent: number;
 }
 
 export interface Expense {
@@ -32,13 +30,14 @@ export interface Expense {
   totalAmount: number;
   paidBy: string;
   splitType: SplitType;
-  /** used by "equal" */
+  /** used by "equal" (any size) and "exclusive" (exactly one id) */
   sharedWith: string[];
-  items: ExpenseItem[];
-  /** used by "custom" */
+  /** meaningful only when splitType === "custom" */
+  customMode: CustomMode;
+  /** used by "custom" + "amount" */
   allocations: Allocation[];
-  /** used by "weight" */
-  weights: Weight[];
+  /** used by "custom" + "percentage" */
+  percentages: Percentage[];
 }
 
 export interface Party {
@@ -49,6 +48,16 @@ export interface Party {
   date: string;
   participants: Participant[];
   expenses: Expense[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** A person registered once and reusable across parties — copied into a
+ * `Participant` (name + phone) when added to a party, never referenced live. */
+export interface Person {
+  id: string;
+  name: string;
+  phone?: string;
   createdAt: number;
   updatedAt: number;
 }

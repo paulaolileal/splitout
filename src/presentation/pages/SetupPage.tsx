@@ -7,6 +7,7 @@ import { SheetsInitializer } from "@/infrastructure/google/SheetsInitializer";
 import { useAuthStore } from "@/store/authStore";
 import { useSpreadsheetStore } from "@/store/spreadsheetStore";
 import { clearSheetProvider } from "@/application/repositoryProvider";
+import { ensureSchema } from "@/application/ensureSchema";
 import { Logo } from "@/presentation/components/primitives";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
@@ -53,7 +54,7 @@ export function SetupPage() {
       let spreadsheetId: string;
       if (found.length > 0) {
         spreadsheetId = found[0]!.id;
-        await initializer.ensureSheets(spreadsheetId);
+        await ensureSchema(spreadsheetId);
       } else {
         spreadsheetId = await initializer.createSpreadsheet(SPREADSHEET_TITLE);
         await drive.moveToFolder(spreadsheetId, folderId);

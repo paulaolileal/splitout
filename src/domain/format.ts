@@ -50,3 +50,20 @@ export function colorFor(seed: string): string {
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   return PALETTE[hash % PALETTE.length]!;
 }
+
+/** Strips everything but digits and, for a bare 10-11 digit Brazilian local
+ * number (DDD + phone, no country code), prefixes `55` — what `wa.me`
+ * expects (full E.164 digits, no `+`/spaces/dashes). */
+export function toWhatsAppDigits(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10 || digits.length === 11) return `55${digits}`;
+  return digits;
+}
+
+/** Builds a `wa.me` deep link. Without a phone, omits the number entirely —
+ * WhatsApp then opens its own contact/group picker (used for the group
+ * share, which has no single recipient). */
+export function buildWhatsAppLink(phone: string | null | undefined, text: string): string {
+  const digits = phone ? toWhatsAppDigits(phone) : "";
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}

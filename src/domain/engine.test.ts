@@ -20,9 +20,9 @@ function baseExpense(overrides: Partial<Expense> = {}): Expense {
     paidBy: "a",
     splitType: "equal",
     sharedWith: [],
-    items: [],
+    customMode: "amount",
     allocations: [],
-    weights: [],
+    percentages: [],
     ...overrides,
   };
 }
@@ -45,27 +45,16 @@ describe("allocateExpense", () => {
     expect(allocateExpense(expense)).toEqual({});
   });
 
-  it("splits an 'item' expense per item, summing across items for the same participant", () => {
-    const expense = baseExpense({
-      totalAmount: 9000,
-      splitType: "item",
-      items: [
-        { id: "i1", description: "Macarrão", amount: 4000, participantIds: ["paula"] },
-        { id: "i2", description: "Fricassê", amount: 2000, participantIds: ["mel"] },
-        { id: "i3", description: "Rateado", amount: 3000, participantIds: ["paula", "jess"] },
-      ],
-    });
-    const alloc = allocateExpense(expense);
-    expect(alloc["paula"]).toBe(4000 + 1500);
-    expect(alloc["mel"]).toBe(2000);
-    expect(alloc["jess"]).toBe(1500);
-    expect(Object.values(alloc).reduce((a, b) => a + b, 0)).toBe(9000);
+  it("gives the entire total to the single person on an 'exclusive' expense", () => {
+    const expense = baseExpense({ totalAmount: 4500, splitType: "exclusive", sharedWith: ["a"] });
+    expect(allocateExpense(expense)).toEqual({ a: 4500 });
   });
 
-  it("uses fixed amounts for a 'custom' expense", () => {
+  it("uses fixed amounts for a 'custom' expense in 'amount' mode", () => {
     const expense = baseExpense({
       totalAmount: 300,
       splitType: "custom",
+      customMode: "amount",
       allocations: [
         { participantId: "a", amount: 100 },
         { participantId: "b", amount: 200 },
@@ -74,14 +63,15 @@ describe("allocateExpense", () => {
     expect(allocateExpense(expense)).toEqual({ a: 100, b: 200 });
   });
 
-  it("distributes a 'weight' expense proportionally and ignores zero-weight participants", () => {
+  it("distributes a 'custom' expense in 'percentage' mode proportionally and ignores zero-percent participants", () => {
     const expense = baseExpense({
       totalAmount: 100,
-      splitType: "weight",
-      weights: [
-        { participantId: "a", weight: 3 },
-        { participantId: "b", weight: 1 },
-        { participantId: "c", weight: 0 },
+      splitType: "custom",
+      customMode: "percentage",
+      percentages: [
+        { participantId: "a", percent: 75 },
+        { participantId: "b", percent: 25 },
+        { participantId: "c", percent: 0 },
       ],
     });
     const alloc = allocateExpense(expense);
@@ -92,20 +82,50 @@ describe("allocateExpense", () => {
 });
 
 describe("splitTotal / expenseIsBalanced", () => {
-  it("sums item amounts for 'item' splits regardless of totalAmount", () => {
+  it("sums allocation amounts for 'custom'+'amount' splits regardless of totalAmount", () => {
     const expense = baseExpense({
       totalAmount: 100,
-      splitType: "item",
-      items: [{ id: "i1", description: "x", amount: 40, participantIds: ["a"] }],
+      splitType: "custom",
+      customMode: "amount",
+      allocations: [{ participantId: "a", amount: 40 }],
     });
     expect(splitTotal(expense)).toBe(40);
     expect(expenseIsBalanced(expense)).toBe(false);
   });
 
-  it("is balanced for 'equal'/'weight' splits as long as totalAmount is set", () => {
-    const expense = baseExpense({ totalAmount: 100, splitType: "equal", sharedWith: ["a"] });
-    expect(splitTotal(expense)).toBe(100);
+  it("is unbalanced for 'custom'+'percentage' splits when percentages don't add up to 100", () => {
+    const expense = baseExpense({
+      totalAmount: 200,
+      splitType: "custom",
+      customMode: "percentage",
+      percentages: [{ participantId: "a", percent: 40 }],
+    });
+    expect(splitTotal(expense)).toBe(80);
+    expect(expenseIsBalanced(expense)).toBe(false);
+  });
+
+  it("is balanced for 'custom'+'percentage' splits when percentages add up to 100", () => {
+    const expense = baseExpense({
+      totalAmount: 200,
+      splitType: "custom",
+      customMode: "percentage",
+      percentages: [
+        { participantId: "a", percent: 60 },
+        { participantId: "b", percent: 40 },
+      ],
+    });
+    expect(splitTotal(expense)).toBe(200);
     expect(expenseIsBalanced(expense)).toBe(true);
+  });
+
+  it("is balanced for 'equal'/'exclusive' splits as long as totalAmount is set", () => {
+    const equal = baseExpense({ totalAmount: 100, splitType: "equal", sharedWith: ["a"] });
+    expect(splitTotal(equal)).toBe(100);
+    expect(expenseIsBalanced(equal)).toBe(true);
+
+    const exclusive = baseExpense({ totalAmount: 100, splitType: "exclusive", sharedWith: ["a"] });
+    expect(splitTotal(exclusive)).toBe(100);
+    expect(expenseIsBalanced(exclusive)).toBe(true);
   });
 });
 
@@ -181,7 +201,7 @@ describe("settle", () => {
 });
 
 describe("settlementFor (integration, using the reference sample party)", () => {
-  it("matches the documented example: Paula paid 90 for the group, item-split", () => {
+  it("matches the documented example: Paula paid 90 for the group, custom-split", () => {
     const party = sampleParty();
     const { balances, transfers } = settlementFor(party);
 

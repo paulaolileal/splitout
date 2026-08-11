@@ -1,4 +1,4 @@
-import { ArrowRight, Users, Receipt } from "lucide-react";
+import { ArrowRight, MessageCircle, Users, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/domain/format";
 import type { Expense, Participant, Transfer } from "@/domain/types";
@@ -8,9 +8,8 @@ import { Money } from "./primitives";
 
 const SPLIT_LABEL: Record<string, string> = {
   equal: "Igual",
-  item: "Por item",
+  exclusive: "Individual",
   custom: "Personalizado",
-  weight: "Proporcional",
 };
 
 export function ExpenseCard({
@@ -109,29 +108,44 @@ export function BalanceCard({
   owed,
   balance,
   onClick,
+  onWhatsApp,
 }: {
   participant: Participant;
   paid: number;
   owed: number;
   balance: number;
   onClick?: (() => void) | undefined;
+  onWhatsApp?: (() => void) | undefined;
 }) {
   const tone = balance > 0 ? "positive" : balance < 0 ? "negative" : "muted";
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="card-surface flex w-full items-center gap-3 px-4 py-3 text-left transition-transform hover:-translate-y-0.5"
-    >
-      <ParticipantAvatar id={participant.id} name={participant.name} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold">{participant.name}</p>
-        <p className="text-xs text-muted-foreground">
-          pagou {formatBRL(paid)} · consumiu {formatBRL(owed)}
-        </p>
-      </div>
-      <Money cents={balance} tone={tone} signed />
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onClick}
+        className="card-surface flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-transform hover:-translate-y-0.5"
+      >
+        <ParticipantAvatar id={participant.id} name={participant.name} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold">{participant.name}</p>
+          <p className="text-xs text-muted-foreground">
+            pagou {formatBRL(paid)} · consumiu {formatBRL(owed)}
+          </p>
+        </div>
+        <Money cents={balance} tone={tone} signed />
+      </button>
+      {onWhatsApp ? (
+        <button
+          type="button"
+          onClick={onWhatsApp}
+          aria-label={`Enviar resumo de ${participant.name} pelo WhatsApp`}
+          title="Enviar pelo WhatsApp"
+          className="card-surface grid size-11 shrink-0 place-items-center text-positive transition-transform hover:-translate-y-0.5"
+        >
+          <MessageCircle aria-hidden="true" className="size-5" />
+        </button>
+      ) : null}
+    </div>
   );
 }
 

@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSheetProvider } from "@/application/repositoryProvider";
 import { createPartyObject } from "@/domain/factories";
-import type { Party } from "@/domain/types";
+import type { Party, Person } from "@/domain/types";
 
 export const qk = {
   parties: ["parties"] as const,
   party: (id: string) => ["parties", id] as const,
+  people: ["people"] as const,
 };
 
 export function useParties() {
@@ -77,6 +78,35 @@ export function useDeleteParty() {
     mutationFn: (id: string) => getSheetProvider().deleteParty(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: qk.parties });
+    },
+  });
+}
+
+/** The registered-people directory — party-independent, reusable across
+ * every rolê (see `PersonRepository`). */
+export function usePeople() {
+  return useQuery({
+    queryKey: qk.people,
+    queryFn: () => getSheetProvider().listPeople(),
+  });
+}
+
+export function useSavePerson() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (person: Person) => getSheetProvider().savePerson(person),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.people });
+    },
+  });
+}
+
+export function useDeletePerson() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => getSheetProvider().deletePerson(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.people });
     },
   });
 }

@@ -1,30 +1,36 @@
 /**
- * Google Sheets implementation of `PartyRepository` (src/domain/repository.ts).
+ * Google Sheets implementation of `PartyRepository` and `PersonRepository`
+ * (src/domain/repository.ts).
  *
- * Strategy — "whole-table overwrite": every read fetches all seven tabs in a
- * single `values:batchGet` and reassembles the full `Party[]` graph in
- * memory; every write (`saveParty`/`deleteParty`) reassembles that same
- * `Party[]` graph with the mutation applied, then rewrites the seven tabs
- * from scratch (`values:batchClear` followed by `values:batchUpdate`).
+ * Party strategy — "whole-table overwrite": every read fetches all six party
+ * tabs in parallel and reassembles the full `Party[]` graph in memory; every
+ * write (`saveParty`/`deleteParty`) reassembles that same `Party[]` graph
+ * with the mutation applied, then rewrites the six tabs from scratch
+ * (`values:batchClear` followed by `values:batchUpdate`).
  *
  * Clearing before writing is what makes this safe: a plain `values.update`
  * only overwrites the cells inside the given range and would leave stale
  * rows behind whenever the new content is shorter than the old one (e.g.
- * removing a participant or an expense item). Clearing first avoids having
- * to track row indices per entity, at the cost of touching every party's
- * rows on every save — acceptable for this app's data volume (see
- * CLAUDE.md's "last-write-wins" note on concurrent edits).
+ * removing a participant). Clearing first avoids having to track row indices
+ * per entity, at the cost of touching every party's rows on every save —
+ * acceptable for this app's data volume (see CLAUDE.md's "last-write-wins"
+ * note on concurrent edits).
+ *
+ * People strategy — the `people` tab is a party-independent registry
+ * (see `PersonRepository`), so it's read/written in isolation from the six
+ * party tabs: a person operation never touches party data and vice versa.
  */
 
-import type { PartyRepository } from "@/domain/repository";
+import type { PartyRepository, PersonRepository } from "@/domain/repository";
 import type {
   Allocation,
+  CustomMode,
   Expense,
-  ExpenseItem,
   Participant,
   Party,
+  Percentage,
+  Person,
   SplitType,
-  Weight,
 } from "@/domain/types";
 import { googleApiFetch } from "./googleApiFetch";
 
@@ -35,10 +41,11 @@ const SHEETS = {
   participants: "participants",
   expenses: "expenses",
   sharedWith: "expense_shared_with",
-  items: "expense_items",
   allocations: "expense_allocations",
-  weights: "expense_weights",
+  percentages: "expense_percentages",
 } as const;
+
+const PEOPLE_SHEET = "people";
 
 const ALL_RANGES = Object.values(SHEETS);
 
@@ -55,6 +62,7 @@ interface ParticipantRow {
   participant_id: string;
   party_id: string;
   nome: string;
+  telefone: string;
 }
 
 interface ExpenseRow {
@@ -65,6 +73,7 @@ interface ExpenseRow {
   valor_total_centavos: string;
   paid_by: string;
   split_type: string;
+  custom_mode: string;
   ordem: string;
 }
 
@@ -73,24 +82,24 @@ interface SharedWithRow {
   participant_id: string;
 }
 
-interface ItemRow {
-  item_id: string;
-  expense_id: string;
-  descricao: string;
-  valor_centavos: string;
-  participant_ids: string;
-}
-
 interface AllocationRow {
   expense_id: string;
   participant_id: string;
   valor_centavos: string;
 }
 
-interface WeightRow {
+interface PercentageRow {
   expense_id: string;
   participant_id: string;
-  peso: string;
+  percentual: string;
+}
+
+interface PersonRow {
+  person_id: string;
+  nome: string;
+  telefone: string;
+  criado_em: string;
+  atualizado_em: string;
 }
 
 interface AllRows {
@@ -98,9 +107,8 @@ interface AllRows {
   [SHEETS.participants]: ParticipantRow[];
   [SHEETS.expenses]: ExpenseRow[];
   [SHEETS.sharedWith]: SharedWithRow[];
-  [SHEETS.items]: ItemRow[];
   [SHEETS.allocations]: AllocationRow[];
-  [SHEETS.weights]: WeightRow[];
+  [SHEETS.percentages]: PercentageRow[];
 }
 
 /** Turns a raw `[header, ...rows]` grid into typed records keyed by the
@@ -121,7 +129,7 @@ export interface GoogleSheetsConfig {
   spreadsheetId: string;
 }
 
-export class GoogleSheetsRepository implements PartyRepository {
+export class GoogleSheetsRepository implements PartyRepository, PersonRepository {
   constructor(private readonly cfg: GoogleSheetsConfig) {}
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -135,7 +143,7 @@ export class GoogleSheetsRepository implements PartyRepository {
 
   /** Reads a single tab's raw cells via `values.get`. One HTTP call per tab,
    * fired in parallel by `readAllRows` — deliberately *not* a single
-   * `values:batchGet` across all seven ranges: the Sheets API echoes back
+   * `values:batchGet` across all ranges: the Sheets API echoes back
    * each `ValueRange.range` normalized to the data's actual extent (e.g.
    * `"parties!A1:F2"`), never the bare sheet name we requested, so matching
    * the response back to a tab by that string always misses and silently
@@ -153,18 +161,16 @@ export class GoogleSheetsRepository implements PartyRepository {
       participants = [],
       expenses = [],
       sharedWith = [],
-      items = [],
       allocations = [],
-      weights = [],
+      percentages = [],
     ] = await Promise.all(ALL_RANGES.map((range) => this.getValues(range)));
     return {
       [SHEETS.parties]: rowsToRecords<PartyRow>(parties),
       [SHEETS.participants]: rowsToRecords<ParticipantRow>(participants),
       [SHEETS.expenses]: rowsToRecords<ExpenseRow>(expenses),
       [SHEETS.sharedWith]: rowsToRecords<SharedWithRow>(sharedWith),
-      [SHEETS.items]: rowsToRecords<ItemRow>(items),
       [SHEETS.allocations]: rowsToRecords<AllocationRow>(allocations),
-      [SHEETS.weights]: rowsToRecords<WeightRow>(weights),
+      [SHEETS.percentages]: rowsToRecords<PercentageRow>(percentages),
     };
   }
 
@@ -173,7 +179,11 @@ export class GoogleSheetsRepository implements PartyRepository {
     for (const r of rows[SHEETS.participants]) {
       if (!r.participant_id || !r.party_id) continue;
       const list = participantsByParty.get(r.party_id) ?? [];
-      list.push({ id: r.participant_id, name: r.nome });
+      list.push({
+        id: r.participant_id,
+        name: r.nome,
+        ...(r.telefone ? { phone: r.telefone } : {}),
+      });
       participantsByParty.set(r.party_id, list);
     }
 
@@ -185,19 +195,6 @@ export class GoogleSheetsRepository implements PartyRepository {
       sharedWithByExpense.set(r.expense_id, list);
     }
 
-    const itemsByExpense = new Map<string, ExpenseItem[]>();
-    for (const r of rows[SHEETS.items]) {
-      if (!r.item_id || !r.expense_id) continue;
-      const list = itemsByExpense.get(r.expense_id) ?? [];
-      list.push({
-        id: r.item_id,
-        description: r.descricao,
-        amount: Number(r.valor_centavos) || 0,
-        participantIds: r.participant_ids.split(",").filter(Boolean),
-      });
-      itemsByExpense.set(r.expense_id, list);
-    }
-
     const allocationsByExpense = new Map<string, Allocation[]>();
     for (const r of rows[SHEETS.allocations]) {
       if (!r.expense_id || !r.participant_id) continue;
@@ -206,12 +203,12 @@ export class GoogleSheetsRepository implements PartyRepository {
       allocationsByExpense.set(r.expense_id, list);
     }
 
-    const weightsByExpense = new Map<string, Weight[]>();
-    for (const r of rows[SHEETS.weights]) {
+    const percentagesByExpense = new Map<string, Percentage[]>();
+    for (const r of rows[SHEETS.percentages]) {
       if (!r.expense_id || !r.participant_id) continue;
-      const list = weightsByExpense.get(r.expense_id) ?? [];
-      list.push({ participantId: r.participant_id, weight: Number(r.peso) || 0 });
-      weightsByExpense.set(r.expense_id, list);
+      const list = percentagesByExpense.get(r.expense_id) ?? [];
+      list.push({ participantId: r.participant_id, percent: Number(r.percentual) || 0 });
+      percentagesByExpense.set(r.expense_id, list);
     }
 
     const expensesByParty = new Map<string, Expense[]>();
@@ -228,9 +225,9 @@ export class GoogleSheetsRepository implements PartyRepository {
         paidBy: r.paid_by,
         splitType: (r.split_type as SplitType) || "equal",
         sharedWith: sharedWithByExpense.get(r.expense_id) ?? [],
-        items: itemsByExpense.get(r.expense_id) ?? [],
+        customMode: (r.custom_mode as CustomMode) || "amount",
         allocations: allocationsByExpense.get(r.expense_id) ?? [],
-        weights: weightsByExpense.get(r.expense_id) ?? [],
+        percentages: percentagesByExpense.get(r.expense_id) ?? [],
       };
       const list = expensesByParty.get(r.party_id) ?? [];
       list.push(expense);
@@ -258,9 +255,8 @@ export class GoogleSheetsRepository implements PartyRepository {
     const participantsRows: (string | number)[][] = [];
     const expensesRows: (string | number)[][] = [];
     const sharedWithRows: (string | number)[][] = [];
-    const itemsRows: (string | number)[][] = [];
     const allocationsRows: (string | number)[][] = [];
-    const weightsRows: (string | number)[][] = [];
+    const percentagesRows: (string | number)[][] = [];
 
     for (const party of parties) {
       partiesRows.push([
@@ -272,7 +268,7 @@ export class GoogleSheetsRepository implements PartyRepository {
         party.updatedAt,
       ]);
       for (const p of party.participants) {
-        participantsRows.push([p.id, party.id, p.name]);
+        participantsRows.push([p.id, party.id, p.name, p.phone ?? ""]);
       }
       party.expenses.forEach((e, ordem) => {
         expensesRows.push([
@@ -283,20 +279,12 @@ export class GoogleSheetsRepository implements PartyRepository {
           e.totalAmount,
           e.paidBy,
           e.splitType,
+          e.customMode,
           ordem,
         ]);
         for (const pid of e.sharedWith) sharedWithRows.push([e.id, pid]);
-        for (const item of e.items) {
-          itemsRows.push([
-            item.id,
-            e.id,
-            item.description,
-            item.amount,
-            item.participantIds.join(","),
-          ]);
-        }
         for (const a of e.allocations) allocationsRows.push([e.id, a.participantId, a.amount]);
-        for (const w of e.weights) weightsRows.push([e.id, w.participantId, w.weight]);
+        for (const p of e.percentages) percentagesRows.push([e.id, p.participantId, p.percent]);
       });
     }
 
@@ -307,9 +295,8 @@ export class GoogleSheetsRepository implements PartyRepository {
       [SHEETS.participants]: withHeader(SHEETS.participants, participantsRows),
       [SHEETS.expenses]: withHeader(SHEETS.expenses, expensesRows),
       [SHEETS.sharedWith]: withHeader(SHEETS.sharedWith, sharedWithRows),
-      [SHEETS.items]: withHeader(SHEETS.items, itemsRows),
       [SHEETS.allocations]: withHeader(SHEETS.allocations, allocationsRows),
-      [SHEETS.weights]: withHeader(SHEETS.weights, weightsRows),
+      [SHEETS.percentages]: withHeader(SHEETS.percentages, percentagesRows),
     };
   }
 
@@ -357,11 +344,67 @@ export class GoogleSheetsRepository implements PartyRepository {
     const all = this.assembleParties(rows).filter((p) => p.id !== id);
     await this.writeAll(all);
   }
+
+  // ---- PersonRepository -------------------------------------------------
+  // `people` is party-independent, so it's read/written in isolation from
+  // the six party tabs above — never touched by `readAllRows`/`writeAll`.
+
+  private async readPeopleRows(): Promise<Person[]> {
+    const values = await this.getValues(PEOPLE_SHEET);
+    return rowsToRecords<PersonRow>(values)
+      .filter((r) => !!r.person_id)
+      .map((r) => ({
+        id: r.person_id,
+        name: r.nome,
+        ...(r.telefone ? { phone: r.telefone } : {}),
+        createdAt: Number(r.criado_em) || 0,
+        updatedAt: Number(r.atualizado_em) || 0,
+      }));
+  }
+
+  private async writePeople(people: Person[]): Promise<void> {
+    const rows: (string | number)[][] = people.map((p) => [
+      p.id,
+      p.name,
+      p.phone ?? "",
+      p.createdAt,
+      p.updatedAt,
+    ]);
+
+    await this.request("/values:batchClear", {
+      method: "POST",
+      body: JSON.stringify({ ranges: [PEOPLE_SHEET] }),
+    });
+
+    await this.request(`/values/${PEOPLE_SHEET}?valueInputOption=USER_ENTERED`, {
+      method: "PUT",
+      body: JSON.stringify({ range: PEOPLE_SHEET, values: [HEADERS[PEOPLE_SHEET]!, ...rows] }),
+    });
+  }
+
+  async listPeople(): Promise<Person[]> {
+    const people = await this.readPeopleRows();
+    return people.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }
+
+  async savePerson(person: Person): Promise<void> {
+    const all = await this.readPeopleRows();
+    const next = { ...person, updatedAt: Date.now() };
+    const index = all.findIndex((p) => p.id === person.id);
+    if (index >= 0) all[index] = next;
+    else all.push(next);
+    await this.writePeople(all);
+  }
+
+  async deletePerson(id: string): Promise<void> {
+    const all = await this.readPeopleRows();
+    await this.writePeople(all.filter((p) => p.id !== id));
+  }
 }
 
 const HEADERS: Record<string, string[]> = {
   [SHEETS.parties]: ["party_id", "nome", "emoji", "data", "criado_em", "atualizado_em"],
-  [SHEETS.participants]: ["participant_id", "party_id", "nome"],
+  [SHEETS.participants]: ["participant_id", "party_id", "nome", "telefone"],
   [SHEETS.expenses]: [
     "expense_id",
     "party_id",
@@ -370,10 +413,11 @@ const HEADERS: Record<string, string[]> = {
     "valor_total_centavos",
     "paid_by",
     "split_type",
+    "custom_mode",
     "ordem",
   ],
   [SHEETS.sharedWith]: ["expense_id", "participant_id"],
-  [SHEETS.items]: ["item_id", "expense_id", "descricao", "valor_centavos", "participant_ids"],
   [SHEETS.allocations]: ["expense_id", "participant_id", "valor_centavos"],
-  [SHEETS.weights]: ["expense_id", "participant_id", "peso"],
+  [SHEETS.percentages]: ["expense_id", "participant_id", "percentual"],
+  [PEOPLE_SHEET]: ["person_id", "nome", "telefone", "criado_em", "atualizado_em"],
 };
