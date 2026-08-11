@@ -7,6 +7,7 @@ import { SetupPage } from "./pages/SetupPage";
 import { HomePage } from "./pages/HomePage";
 import { NewPartyPage } from "./pages/NewPartyPage";
 import { PartyPage } from "./pages/PartyPage";
+import { ConsolidatedReportPage } from "./pages/ConsolidatedReportPage";
 import { PeoplePage } from "./pages/PeoplePage";
 import { ParticipantReportPage } from "./pages/ParticipantReportPage";
 import { SharedReportPage } from "./pages/SharedReportPage";
@@ -28,6 +29,7 @@ export function App() {
           <Route path="role/novo" element={<NewPartyPage />} />
           <Route path="role/:id" element={<PartyPage />} />
           <Route path="role/:id/p/:pid" element={<ParticipantReportPage />} />
+          <Route path="consolidado" element={<ConsolidatedReportPage />} />
           <Route path="pessoas" element={<PeoplePage />} />
         </Route>
       </Route>

@@ -123,7 +123,8 @@ export function BalanceCard({
     <button
       type="button"
       onClick={onClick}
-      className="card-surface flex w-full items-center gap-3 px-4 py-3 text-left transition-transform hover:-translate-y-0.5"
+      disabled={!onClick}
+      className="card-surface flex w-full items-center gap-3 px-4 py-3 text-left transition-transform enabled:hover:-translate-y-0.5 disabled:cursor-default"
     >
       <ParticipantAvatar id={participant.id} name={participant.name} />
       <div className="min-w-0 flex-1">
