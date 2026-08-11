@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
 import { Plus, RefreshCw } from "lucide-react";
-import { AppShell, EmptyState, Money, SectionTitle } from "@/presentation/components/primitives";
+import {
+  AppShell,
+  EmptyState,
+  Money,
+  SectionTitle,
+  fabPositionClassName,
+  useFooterProximity,
+} from "@/presentation/components/primitives";
 import { ParticipantAvatar } from "@/presentation/components/ParticipantAvatar";
 import { useParties } from "@/hooks/queries";
 import { partyTotal, settlementFor } from "@/domain/engine";
@@ -10,6 +17,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 export function HomePage() {
   useDocumentTitle("Seus rolês — Splitout!");
   const { data: parties, isLoading, isError, error, refetch } = useParties();
+  const dockFabAboveFooter = useFooterProximity();
 
   return (
     <AppShell
@@ -112,15 +120,13 @@ export function HomePage() {
         </ul>
       )}
 
-      <div className="pointer-events-none sticky bottom-6 z-30 flex justify-end sm:hidden">
-        <Link
-          to="/role/novo"
-          aria-label="Novo rolê"
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary px-5 py-4 font-bold text-primary-foreground shadow-pop"
-        >
-          <Plus aria-hidden="true" className="size-5" /> Novo rolê
-        </Link>
-      </div>
+      <Link
+        to="/role/novo"
+        aria-label="Novo rolê"
+        className={`${fabPositionClassName(dockFabAboveFooter, "sm")} inline-flex items-center gap-2 rounded-full bg-primary px-5 py-4 font-bold text-primary-foreground shadow-pop`}
+      >
+        <Plus aria-hidden="true" className="size-5" /> Novo rolê
+      </Link>
     </AppShell>
   );
 }
