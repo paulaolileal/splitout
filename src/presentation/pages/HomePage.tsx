@@ -59,17 +59,19 @@ export function HomePage() {
               {parties && parties.length > 1 ? (
                 <button
                   type="button"
+                  title="Consolidar"
                   onClick={() => setSelectionMode(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-bold text-background shadow-pop"
+                  className="inline-flex items-center justify-center rounded-full bg-foreground p-1.5 text-background shadow-pop"
                 >
-                  <CheckSquare aria-hidden="true" className="size-4" /> Consolidar
+                  <CheckSquare aria-hidden="true" className="size-4" />
                 </button>
               ) : null}
               <Link
                 to="/role/novo"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-pop"
+                title="Novo rolê"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
               >
-                <Plus aria-hidden="true" className="size-4" /> Novo rolê
+                <Plus aria-hidden="true" className="size-3.5" /> Rolê
               </Link>
             </div>
           ) : null
