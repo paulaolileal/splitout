@@ -59,7 +59,7 @@ presentation → hooks → domain ← infrastructure
 | `src/store/themeStore.ts` | Zustand (persisted, `splitout:theme`): `"light" \| "dark" \| "system"` preference, default `"system"` |
 | `src/hooks/useTheme.ts` | Resolves the active theme (preference + OS `prefers-color-scheme`), toggles the `.dark` class on `<html>`, keeps it in sync with live OS changes, and updates `<meta name="theme-color">`. Called once in `App.tsx` |
 | `src/presentation/components/ThemeToggle.tsx` | Header dropdown (Light/Dark/System) rendered inside `AppShell` |
-| `src/presentation/components/Footer.tsx` | Full-width footer section (inverted `bg-foreground`/`text-background`) rendered at the bottom of every screen — `AppShell`, `LoginPage`, `SetupPage`, `NotFoundPage`. Brand recap + auth-aware nav (`Início`, `Pessoas` when logged in, `Ver exemplo`) + a prominent "Um produto LealTEK" credit — see "Branding" below |
+| `src/presentation/components/Footer.tsx` | Footer rendered at the bottom of every screen — `AppShell`, `LoginPage`, `SetupPage`, `NotFoundPage`. Just the "Um produto LealTEK" credit (sized as a real logo, not a watermark) + copyright — see "Branding" below |
 | `src/presentation/components/Logo.tsx` | The "Splitout!" wordmark (badge + name), used in `AppShell`'s header and in `Footer` |
 | `src/presentation/components/PeoplePicker.tsx` | Popover+Command picker used when adding a participant to a party — pick a registered person or type an ad-hoc name |
 | `src/presentation/components/PersonEditor.tsx` | Small dialog to create/edit/delete a registered person (name, phone with the `maskPhoneInput` mask, and Pix key) |
@@ -94,13 +94,15 @@ screen, not the app itself.
 with the sibling LealTEK apps (`meta-board`, `sheet-budget`) — always transparent,
 so it renders correctly in both themes without any filter/invert.
 
-`Footer.tsx` is one full-width section used everywhere (`AppShell`, `LoginPage`,
-`SetupPage`, `NotFoundPage`) — deliberately not a thin watermark strip, since a
-tiny link/logo pairing under-sells both the app and the credit. It uses the
-inverted `bg-foreground`/`text-background` pair (a solid dark band in light mode,
-a solid light band in dark mode) purely from semantic tokens, so it stays
-theme-aware without any raw color. It links to `https://lealtek.com`. Keep new
-full-page screens (outside `AppShell`) consistent by rendering `<Footer />` as
+`Footer.tsx` is one section used everywhere (`AppShell`, `LoginPage`, `SetupPage`,
+`NotFoundPage`) — deliberately not a thin watermark strip, since a tiny
+link/logo pairing under-sells the credit. It doesn't repeat the "Splitout!"
+wordmark (already in the header on every page) — the LealTEK logo, sized to
+actually read as a logo, is the only mark here. Background/border use ordinary
+semantic tokens (`bg-muted`, `border-border`), never an inverted color pair —
+an inverted band looks like it's ignoring the active theme rather than
+adapting to it. It links to `https://lealtek.com`. Keep new full-page screens
+(outside `AppShell`) consistent by rendering `<Footer />` as
 the last child of a `min-h-screen flex flex-col` wrapper, mirroring
 `SetupPage`/`NotFoundPage`.
 
