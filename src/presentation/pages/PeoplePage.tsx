@@ -41,10 +41,12 @@ export function PeoplePage() {
           aside={
             <button
               type="button"
+              title="Nova pessoa"
               onClick={() => setEditing(null)}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
             >
-              <Plus aria-hidden="true" className="size-3.5" /> Nova pessoa
+              <Plus aria-hidden="true" className="size-3.5" />
+              <span className="hidden sm:inline">Nova pessoa</span>
             </button>
           }
         >

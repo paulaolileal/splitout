@@ -53,21 +53,20 @@ O usuário deve conseguir entender o produto em poucos segundos.
 A experiência principal deve ser:
 
 Criar rolê
-    ↓
+↓
 Adicionar pessoas
-    ↓
+↓
 Adicionar despesas
-    ↓
+↓
 Informar quem pagou
-    ↓
+↓
 Informar quanto cada pessoa consumiu
-    ↓
+↓
 Acerta calcula tudo
-    ↓
+↓
 Mostrar quem paga para quem
-    ↓
+↓
 Compartilhar o acerto individual
-
 
 2. IDENTIDADE DO PRODUTO
 
@@ -174,15 +173,14 @@ Entrar com Google
 Fluxo:
 
 Usuário entra no Acerta
-        ↓
+↓
 Pode conhecer o produto sem login
-        ↓
+↓
 Clica em "Criar meu primeiro rolê"
-        ↓
+↓
 Login Google
-        ↓
+↓
 Cria o rolê
-
 
 Não exigir login para:
 
@@ -209,20 +207,19 @@ Criar uma landing/home que também funcione como entrada do aplicativo.
 Mobile:
 
 ┌──────────────────────────┐
-│       ACERTA             │
-│                          │
-│  Divida o rolê.          │
-│  Acerte as contas.       │
-│                          │
-│   [ + Novo rolê ]        │
-│                          │
-│  Seus rolês               │
-│                          │
-│  🍝 Shopping              │
-│  🏖️ Viagem               │
-│  🍻 Sexta-feira           │
+│ ACERTA │
+│ │
+│ Divida o rolê. │
+│ Acerte as contas. │
+│ │
+│ [ + Novo rolê ] │
+│ │
+│ Seus rolês │
+│ │
+│ 🍝 Shopping │
+│ 🏖️ Viagem │
+│ 🍻 Sexta-feira │
 └──────────────────────────┘
-
 
 No desktop, utilizar uma composição visual mais ampla, mas sem transformar a aplicação em um dashboard corporativo.
 
@@ -269,7 +266,6 @@ Campos:
 Nome do rolê
 Data
 
-
 Data pode ser preenchida automaticamente com a data atual.
 
 Botão:
@@ -291,7 +287,6 @@ Quem está no rolê?
 [ + Adicionar pessoa ]
 
              Continuar →
-
 
 Cada participante deve ter:
 
@@ -315,7 +310,7 @@ Criar uma interface extremamente rápida para adicionar uma despesa.
 
 Botão principal:
 
-+ Adicionar despesa
+- Adicionar despesa
 
 Exemplo:
 
@@ -332,7 +327,6 @@ Como dividir?
 
 [ Por item ] [ Igual ] [ Personalizado ]
 
-
 9. MODOS DE DIVISÃO
 
 Cada despesa deve permitir três formas.
@@ -343,10 +337,9 @@ Exemplo:
 
 R$ 90 entre 3 pessoas.
 
-Paula    R$ 30
+Paula R$ 30
 Mel      R$ 30
-Jess     R$ 30
-
+Jess R$ 30
 
 Permitir selecionar quais participantes entram na divisão.
 
@@ -358,12 +351,11 @@ Exemplo:
 
 🍝 Restaurante
 
-Macarrão       R$ 40    → Paula
-Fricassê       R$ 20    → Mel
-Comida         R$ 30    → Jess
+Macarrão R$ 40    → Paula
+Fricassê       R$ 20 → Mel
+Comida R$ 30 → Jess
 
-Total          R$ 90
-
+Total R$ 90
 
 Permitir adicionar/remover itens.
 
@@ -381,13 +373,11 @@ Macarrão
 R$ 40
 Paula
 
-
 O total dos itens deve ser validado contra o valor total da despesa.
 
 Mostrar claramente:
 
 ✓ R$ 90 / R$ 90
-
 
 quando estiver correto.
 
@@ -397,12 +387,11 @@ Permitir informar manualmente quanto cada pessoa deve assumir.
 
 Exemplo:
 
-Paula     R$ 40
+Paula R$ 40
 Mel       R$ 20
-Jess      R$ 30
+Jess R$ 30
 
-Total     R$ 90 ✓
-
+Total R$ 90 ✓
 
 10. DESPESAS COMPARTILHADAS
 
@@ -432,10 +421,9 @@ Permitir divisão proporcional.
 
 Exemplo:
 
-Paula     2 noites
-Mel       2 noites
-Jess      1 noite
-
+Paula 2 noites
+Mel 2 noites
+Jess 1 noite
 
 O valor é distribuído proporcionalmente.
 
@@ -448,41 +436,37 @@ Não armazenar diretamente os acertos finais como informação primária.
 O modelo deve representar:
 
 Party {
-  id
-  name
-  date
-  participants[]
-  expenses[]
+id
+name
+date
+participants[]
+expenses[]
 }
-
 
 Cada despesa:
 
 Expense {
-  id
-  description
-  totalAmount
-  paidBy
-  splitType
-  items[]
-  allocations[]
+id
+description
+totalAmount
+paidBy
+splitType
+items[]
+allocations[]
 }
-
 
 Cada allocation:
 
 Allocation {
-  participantId
-  amount
+participantId
+amount
 }
-
 
 O saldo deve ser sempre calculado.
 
 Regra:
 
 saldo = totalPago - totalDevido
-
 
 Onde:
 
@@ -496,20 +480,18 @@ Criar uma função pura e testável responsável pelo cálculo.
 
 Exemplo:
 
-Paula  +150
-Mel     +30
-Jess    -100
-João     -80
-
+Paula +150
+Mel +30
+Jess -100
+João -80
 
 O algoritmo deve gerar o menor conjunto razoável de transferências.
 
 Resultado:
 
-Jess → Paula     R$ 100
+Jess → Paula R$ 100
 João → Paula     R$ 50
-João → Mel       R$ 30
-
+João → Mel R$ 30
 
 O usuário não precisa entender o algoritmo.
 
@@ -532,7 +514,6 @@ R$ 350,00
 4 pessoas
 5 despesas
 
-
 Depois:
 
 Acertos
@@ -542,15 +523,14 @@ Usar cards visuais.
 Exemplo:
 
 ┌──────────────────────────┐
-│ 👩 Mel                   │
-│                          │
-│ paga R$ 20,00            │
-│                          │
-│        →                 │
-│                          │
-│ 👩 Paula                 │
+│ 👩 Mel │
+│ │
+│ paga R$ 20,00 │
+│ │
+│ → │
+│ │
+│ 👩 Paula │
 └──────────────────────────┘
-
 
 Ou:
 
@@ -559,7 +539,6 @@ Mel
 R$ 20
 ↓
 Paula
-
 
 Não apresentar isso inicialmente como uma tabela financeira.
 
@@ -593,14 +572,12 @@ R$ 20,00
 
 [ Compartilhar ]
 
-
 Se a pessoa tiver múltiplos pagamentos:
 
 Você precisa pagar R$ 85
 
-Paula      R$ 50
+Paula R$ 50
 Jess       R$ 35
-
 
 Se a pessoa tiver crédito:
 
@@ -610,9 +587,8 @@ R$ 120
 
 de:
 
-Mel       R$ 40
+Mel R$ 40
 Jess      R$ 80
-
 
 15. COMPARTILHAMENTO SEM LOGIN
 
@@ -636,7 +612,6 @@ Conceito:
 
 acerta.app/r/<payload>
 
-
 O payload deve conter somente as informações necessárias para o relatório individual.
 
 NÃO colocar dados desnecessários no link.
@@ -644,15 +619,14 @@ NÃO colocar dados desnecessários no link.
 Quando o usuário abre o link:
 
 Link
- ↓
+↓
 Acerta interpreta snapshot
- ↓
+↓
 Mostra relatório
- ↓
+↓
 Sem login
- ↓
+↓
 Sem acesso ao rolê completo
-
 
 O relatório deve ser somente leitura.
 
@@ -677,14 +651,13 @@ Gerar QR Code
 Exemplo:
 
 ┌───────────────────────┐
-│                       │
-│       QR CODE         │
-│                       │
-│                       │
+│ │
+│ QR CODE │
+│ │
+│ │
 └───────────────────────┘
 
 Escaneie para ver seu acerto
-
 
 Isso deve funcionar perfeitamente em celulares.
 
@@ -695,7 +668,6 @@ No celular utilizar a Web Share API quando disponível.
 Exemplo:
 
 [ Compartilhar ]
-
 
 Abrir o menu nativo de compartilhamento do celular.
 
@@ -729,7 +701,6 @@ Nome:
 
 Acerta — Shopping — 10/08/2026
 
-
 Estrutura sugerida:
 
 Aba Resumo
@@ -739,7 +710,6 @@ Data
 Participantes
 Total
 
-
 Aba Despesas
 
 ID
@@ -748,13 +718,11 @@ Valor
 Pago por
 Tipo de divisão
 
-
 Aba Divisão
 
 Despesa
 Participante
 Valor
-
 
 Aba Acertos
 
@@ -762,12 +730,10 @@ Quem paga
 Quem recebe
 Valor
 
-
 Aba Participantes
 
 ID
 Nome
-
 
 19. SINCRONIZAÇÃO
 
@@ -776,13 +742,12 @@ O Google Sheets não deve deixar a experiência lenta.
 O fluxo deve ser:
 
 Usuário edita
-     ↓
+↓
 Estado local atualizado imediatamente
-     ↓
+↓
 UI atualiza imediatamente
-     ↓
+↓
 Sincronização com Google Sheets
-
 
 Usar debounce para evitar escrever na planilha a cada pequena alteração.
 
@@ -790,11 +755,9 @@ Mostrar um pequeno indicador:
 
 ✓ Salvo no Google
 
-
 ou:
 
 Salvando...
-
 
 Nunca bloquear a interface esperando o Google Sheets.
 
@@ -814,7 +777,6 @@ Quando voltar a ter conexão:
 
 Sincronizar com Google Sheets
 
-
 Se não houver conexão com Google, manter o estado local.
 
 21. HOME / HISTÓRICO
@@ -833,7 +795,6 @@ R$ 90
 
 ✓ Acertado
 
-
 Outro:
 
 🍻 Sexta no bar
@@ -843,7 +804,6 @@ Outro:
 R$ 420
 
 ✓ Acertado
-
 
 Ações:
 
@@ -866,28 +826,27 @@ Criar uma experiência desktop real.
 Em desktop:
 
 ┌──────────────────────────────────────────────────┐
-│ ACERTA                              Paula   👤   │
+│ ACERTA Paula 👤 │
 ├──────────────────────────────────────────────────┤
-│                                                  │
-│  🍝 Shopping                                     │
-│                                                  │
-│  ┌───────────────┐  ┌─────────────────────────┐ │
-│  │ Participantes │  │                         │ │
-│  │               │  │ Despesas                │ │
-│  │ Paula         │  │                         │ │
-│  │ Mel           │  │ Restaurante   R$ 90    │ │
-│  │ Jess          │  │ Uber          R$ 60    │ │
-│  │               │  │                         │ │
-│  └───────────────┘  └─────────────────────────┘ │
-│                                                  │
-│  ┌────────────────────────────────────────────┐  │
-│  │                 ACERTO                     │  │
-│  │                                            │  │
-│  │ Mel → Paula                 R$ 20          │  │
-│  │ Jess → Paula                R$ 30          │  │
-│  └────────────────────────────────────────────┘  │
+│ │
+│ 🍝 Shopping │
+│ │
+│ ┌───────────────┐ ┌─────────────────────────┐ │
+│ │ Participantes │ │ │ │
+│ │ │ │ Despesas │ │
+│ │ Paula │ │ │ │
+│ │ Mel │ │ Restaurante R$ 90    │ │
+│  │ Jess          │  │ Uber          R$ 60 │ │
+│ │ │ │ │ │
+│ └───────────────┘ └─────────────────────────┘ │
+│ │
+│ ┌────────────────────────────────────────────┐ │
+│ │ ACERTO │ │
+│ │ │ │
+│ │ Mel → Paula R$ 20          │  │
+│  │ Jess → Paula                R$ 30 │ │
+│ └────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────┘
-
 
 Usar melhor o espaço horizontal.
 
@@ -927,8 +886,7 @@ Exemplos:
 
 Quando uma despesa é adicionada:
 
-+ R$ 90
-
+- R$ 90
 
 entra suavemente no resumo.
 
@@ -937,25 +895,21 @@ Quando uma conta fecha corretamente:
 R$ 90 / R$ 90
 ✓
 
-
 mostrar uma pequena animação de sucesso.
 
 Quando o resultado final é calculado:
 
 Calculando...
-      ↓
+↓
 ✓ Rolê acertado!
-
 
 Quando alguém recebe crédito:
 
-+ R$ 50
-
+- R$ 50
 
 Quando alguém precisa pagar:
 
 - R$ 20
-
 
 As animações devem ser rápidas e elegantes, nunca infantis ou exageradas.
 
@@ -1066,7 +1020,6 @@ R$ 85,00
 
 ⚠️ Faltam R$ 5,00 para fechar a conta.
 
-
 29. PRIMEIRA VERSÃO
 
 Implementar primeiro:
@@ -1163,7 +1116,6 @@ Macarrão → Paula → R$ 40
 Fricassê → Mel → R$ 20
 Comida → Jess → R$ 30
 
-
 Resultado esperado:
 
 Paula
@@ -1181,12 +1133,10 @@ Pagou: R$ 0
 Deveria pagar: R$ 30
 Saldo: -R$ 30
 
-
 Acertos:
 
-Mel → Paula     R$ 20
+Mel → Paula R$ 20
 Jess → Paula    R$ 30
-
 
 Esse cenário deve funcionar perfeitamente tanto no mobile quanto no desktop.
 

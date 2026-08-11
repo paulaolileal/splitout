@@ -51,10 +51,11 @@ export function PeoplePicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="Adicionar pessoa"
-          className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground"
+          title="Adicionar pessoa"
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
         >
-          <Plus aria-hidden="true" className="size-4" /> Adicionar pessoa
+          <Plus aria-hidden="true" className="size-3.5" />
+          <span className="hidden sm:inline">Adicionar pessoa</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-72 rounded-2xl p-0" align="start">
