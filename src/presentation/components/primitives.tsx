@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/domain/format";
 import { useAuthStore } from "@/store/authStore";
-import { clearAccessToken } from "@/services/googleAuth";
+import { signOut as signOutOfGoogle } from "@/services/googleAuth";
 import { useTheme } from "@/hooks/useTheme";
 import type { Theme } from "@/store/themeStore";
 import { Footer } from "@/presentation/components/Footer";
@@ -40,7 +40,7 @@ function UserMenu() {
   const ActiveThemeIcon = THEME_OPTIONS.find((o) => o.value === theme)?.icon ?? Monitor;
 
   const signOut = () => {
-    clearAccessToken();
+    signOutOfGoogle();
     clearUser();
   };
 

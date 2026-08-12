@@ -30,11 +30,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
-        // Data never comes from the cache: Sheets/Drive/OAuth calls always hit the network.
+        // Data never comes from the cache: Sheets/Drive/lealtek-api calls always hit the network.
         runtimeCaching: [
           {
             urlPattern: ({ url }: { url: URL }) =>
-              url.hostname.endsWith("googleapis.com") || url.hostname === "accounts.google.com",
+              url.hostname.endsWith("googleapis.com") || url.hostname === "api.lealtek.com",
             handler: "NetworkOnly",
           },
         ],

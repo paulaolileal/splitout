@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Sparkles, Loader2 } from "lucide-react";
-import { signIn, silentSignIn, getAccessToken } from "@/services/googleAuth";
+import { signIn, silentSignIn, getCurrentUserInfo, getAccessToken } from "@/services/googleAuth";
+import { isInAppBrowser } from "@/services/inAppBrowser";
+import { OpenInBrowserPrompt } from "@/presentation/components/OpenInBrowserPrompt";
 import { useAuthStore } from "@/store/authStore";
 import { useSpreadsheetStore } from "@/store/spreadsheetStore";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -43,6 +45,21 @@ export function LoginPage() {
   }
 
   useEffect(() => {
+    if (getAccessToken() && !user) {
+      // A valid access_token exists locally but the profile store doesn't —
+      // this is the moment right after landing back from a redirect-based
+      // sign-in (lealtek-api's /api/auth/callback). Hydrate the profile.
+      setLoading(true);
+      getCurrentUserInfo().then((info) => {
+        if (info) {
+          setUser(info);
+          redirectAfterLogin(info.email);
+        } else {
+          setLoading(false);
+        }
+      });
+      return;
+    }
     if (!user || getAccessToken()) return;
     setLoading(true);
     silentSignIn().then((info) => {
@@ -61,17 +78,13 @@ export function LoginPage() {
     return <Navigate to={hasSpreadsheet ? "/" : "/setup"} replace />;
   }
 
-  async function handleSignIn() {
+  function handleSignIn() {
+    // signIn() navigates the whole tab away to lealtek-api's login endpoint
+    // — there's nothing to await here, the profile gets hydrated by the
+    // effect above once the browser lands back on this page.
     setError(null);
     setLoading(true);
-    try {
-      const info = await signIn();
-      setUser(info);
-      redirectAfterLogin(info.email);
-    } catch (e) {
-      setError((e as Error).message);
-      setLoading(false);
-    }
+    signIn();
   }
 
   return (
@@ -98,19 +111,23 @@ export function LoginPage() {
                   {error}
                 </p>
               ) : null}
-              <button
-                type="button"
-                onClick={handleSignIn}
-                disabled={loading}
-                className="inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-primary px-6 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform active:scale-[0.98] disabled:opacity-60"
-              >
-                {loading ? (
-                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                ) : (
-                  <GoogleIcon />
-                )}
-                {loading ? (user ? "Reconectando…" : "Entrando…") : "Entrar com Google"}
-              </button>
+              {isInAppBrowser() ? (
+                <OpenInBrowserPrompt />
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSignIn}
+                  disabled={loading}
+                  className="inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-primary px-6 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform active:scale-[0.98] disabled:opacity-60"
+                >
+                  {loading ? (
+                    <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                  ) : (
+                    <GoogleIcon />
+                  )}
+                  {loading ? (user ? "Reconectando…" : "Entrando…") : "Entrar com Google"}
+                </button>
+              )}
               <p className="text-center text-xs text-muted-foreground">
                 Seus rolês ficam salvos numa planilha na pasta "LealTEK Apps" do seu Google Drive.
               </p>
